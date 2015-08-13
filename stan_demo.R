@@ -42,9 +42,11 @@ options(mc.cores = 2)
 
 # Prepare the data we'll need as a list
 stan_data <- list(y = y, X = X, N = N, K = K)
+config = list(adapt_delta = 0.85, epsilon = 1e-7)
 
 # Fit the model
-stanfit <- stan(model_code = modelStr, data = stan_data)
+stanfit1 <- stan(model_name = "demo", model_code = modelStr, data = stan_data)
+stanfit2 <- stan(model_name = "demo", model_code = modelStr, data = stan_data, control=config)
 
 # Launch shinyStan
 # library(shinyStan)
