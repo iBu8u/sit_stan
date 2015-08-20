@@ -1,7 +1,7 @@
 data {
   int<lower=1> nSubjects;                              // number of subjects
   int<lower=1> nTrials;                                // number of trials 
-  int<lower=1,upper=2> choice[nSubjects,nTrials];      // 2nd choices, 1 or 2
+  int<lower=1,upper=2> choice2[nSubjects,nTrials];      // 2nd choices, 1 or 2
   real<lower=-1,upper=1> reward[nSubjects,nTrials];    // outcome, 1 or -1
 }
 
@@ -67,15 +67,15 @@ model {
     for (t in 1:nTrials) {
             
       //* compute action probs using built-in softmax function and related to choice data */
-      choice[s,t] ~ categorical_logit( tau[s] * v[t] );
+      choice2[s,t] ~ categorical_logit( tau[s] * v[t] );
 
       //* prediction error */
-      pe[t]   <-  reward[s,t] - v[t][choice[s,t]];
-      penc[t] <- -reward[s,t] - v[t][3-choice[s,t]];
+      pe[t]   <-  reward[s,t] - v[t][choice2[s,t]];
+      penc[t] <- -reward[s,t] - v[t][3-choice2[s,t]];
 
       //* value updating (learning) */
-      v[t+1][choice[s,t]]   <- v[t][choice[s,t]]   + lr1[s] * pe[t];
-      v[t+1][3-choice[s,t]] <- v[t][3-choice[s,t]] + lr2[s] * penc[t];
+      v[t+1][choice2[s,t]]   <- v[t][choice2[s,t]]   + lr1[s] * pe[t];
+      v[t+1][3-choice2[s,t]] <- v[t][3-choice2[s,t]] + lr2[s] * penc[t];
     }
   }
 }
@@ -100,13 +100,13 @@ generated quantities {
     v2[1] <- initV;  
 
     for (t in 1:nTrials) {
-      log_lik[s] <- log_lik[s] + categorical_logit_log(choice[s,t], tau[s] * v2[t]);
+      log_lik[s] <- log_lik[s] + categorical_logit_log(choice2[s,t], tau[s] * v2[t]);
       c_rep[s,t] <- categorical_rng( softmax(tau[s]*v2[t]) );
 
-      pe2[t]   <-  reward[s,t] - v2[t][choice[s,t]];
-      penc2[t] <- -reward[s,t] - v2[t][3-choice[s,t]];
-      v2[t+1][choice[s,t]]   <- v2[t][choice[s,t]]   + lr1[s] * pe2[t];
-      v2[t+1][3-choice[s,t]] <- v2[t][3-choice[s,t]] + lr2[s] * penc2[t];
+      pe2[t]   <-  reward[s,t] - v2[t][choice2[s,t]];
+      penc2[t] <- -reward[s,t] - v2[t][3-choice2[s,t]];
+      v2[t+1][choice2[s,t]]   <- v2[t][choice2[s,t]]   + lr1[s] * pe2[t];
+      v2[t+1][3-choice2[s,t]] <- v2[t][3-choice2[s,t]] + lr2[s] * penc2[t];
     }
   }
 }

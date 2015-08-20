@@ -1,4 +1,4 @@
-run_model <- function(modelStr, fitOBJ=NA) {
+run_model <- function(modelStr, runPara=FALSE, fitOBJ=NA) {
 
   library(rstan); library(parallel); library(loo)
   rstan_options(auto_write = TRUE)
@@ -47,43 +47,34 @@ run_model <- function(modelStr, fitOBJ=NA) {
     dataList$bet1    <- bet1;    dataList$bet2    <- bet2
     dataList$with    <- with;    dataList$against <- against
 
-  } else if (modelStr == "RevLearn_RLbeta_alt1_c" || modelStr == "RevLearn_RLbeta_alt1_bc" || 
-             modelStr == "RevLearn_RLbeta_alt2_c" || modelStr == "RevLearn_RLbeta_alt2_bc") { 
+  } else if (modelStr == "RevLearn_RLbeta_alt1" || modelStr == "RevLearn_RLbeta_alt2") { 
     
     chswtch <- array(0,dim = c(ns,nt))
     bet1    <- array(0,dim = c(ns,nt)); bet2    <- array(0,dim = c(ns,nt))
     with    <- array(0,dim = c(ns,nt)); against <- array(0,dim = c(ns,nt))
     my1     <- 0; other1  <- c(0,0,0,0)
-    otherChoice <- array(0,dim = c(ns,nt,4)); otherReward <- array(0,dim = c(ns,nt,4))
-    pref        <- array(0,dim = c(ns,nt,4)); wOthers     <- array(0,dim = c(ns,nt,4)) # others' weight [.75 .5 .25 .25]
-    wghtValue   <- array(0,dim = c(ns,nt,2));
+    otherChoice <- array(0,dim = c(ns,nt,4));
+    otherind    <- array(0,dim = c(ns,nt,4));
     
     chswtch <- t(mydata[,5,])
     bet1    <- t(mydata[,13,]); bet2    <- t(mydata[,19,])
+
     for (s in 1:ns) {
       otherChoice[s,,] <- mydata[,6:9,s]
-      otherReward[s,,] <- mydata[,24:27,s]
-      pref[s,,]        <- mydata[,47:50,s]
-      wOthers[s,,]     <- mydata[,51:54,s]
     }
-    for (s in 1:s) {
-      wghtValue[s,,] <- mydata[,59:60,s] # others' value based on weight
-    }
+
     for (s in 1:ns) {
-      for (t in 1:nt){
-        my1 <- mydata[t,3,s]; other1 <- mydata[t,6:9,s]
-        with[s,t]    <- length(which(other1==my1))  # count of with, either 1, 2, 3, or 4, divided by 4
-        against[s,t] <- length(which(other1!=my1))  # count of against, either 1, 2, 3, or 4, divided by 4 
+      for (tr in 1:nt){
+        my1 <- mydata[tr,3,s]; other1 <- mydata[tr,6:9,s]
+        with[s,tr]    <- length(which(other1==my1)) /4  # count of with, either 1, 2, 3, or 4, divided by 4
+        against[s,tr] <- length(which(other1!=my1)) /4  # count of against, either 1, 2, 3, or 4, divided by 4 
       }
     }
     
-    dataList$chswtch <- chswtch;
-    dataList$otherChoice <- otherChoice
-    dataList$otherReward <- otherReward
-    dataList$wghtValue   <- wghtValue
+    dataList$chswtch <- chswtch
     dataList$bet1    <- bet1;    dataList$bet2    <- bet2
     dataList$with    <- with;    dataList$against <- against
-    dataList$pref    <- pref;    dataList$wOthers <- wOthers
+
     
     
   } else if (modelStr == "RevLearn_RLcumrew" || modelStr == "RevLearn_RLcumrew_cfa" || 
@@ -104,11 +95,13 @@ run_model <- function(modelStr, fitOBJ=NA) {
   modelFile <- paste0("_scripts/",modelStr,".stan")
 
   # setup up Stan configuration
-  nSamples <- 10#4000
-  nChains  <- 1#4 
-  nBurnin  <- 0#floor(nSamples/2)
-  nThin    <- 1
+  nSamples <- 16000 #12000
+  nChains  <- 4 
+  nBurnin  <- floor(nSamples/2)
+  nThin    <- 8 #3
   
+  # initial parameters, OR use inits from Stan
+  inits <- create_inits(modelStr,nChains,ns,runPara)
   # parameter of interest (this could save both memory and space)
   poi <- create_pois(modelStr)
 
@@ -116,17 +109,42 @@ run_model <- function(modelStr, fitOBJ=NA) {
   cat("Estimating", modelStr, "model... \n")
   startTime = Sys.time(); print(startTime)
   
-  cat("Calling", nChains, "simulations in Stan... \n")
-  stanfit <- stan(modelFile,
-                fit     = fitOBJ,
-                data    = dataList,
-                pars    = poi,
-                chains  = nChains,
-                iter    = nSamples,
-                warmup  = nBurnin,
-                thin    = nThin,
-                init    = "random",
-                verbose = FALSE)
+  if ( runPara == TRUE ) {
+    # this is for running stan on multiple processor cores (taken from Andy Gelman's website/blog)
+    # [update!] from Stan 2.7.0 on, Stan automatically supports sampling in parallel
+    cat("Calling", nChains, "simulations using parallel method... \n")
+    
+    foo  <- stan(modelFile, fit = fitOBJ, data = dataList, iter=1, chains=1)
+    para_results <- mclapply(1:nChains, mc.cores=nChains, FUN=function(chain) {
+      stan(fit     = foo,
+           data    = dataList,
+           pars    = poi,
+           chains  = 1,
+           iter    = nSamples,
+           warmup  = nBurnin,
+           thin    = nThin,
+           # init    = inits,
+           init    = "random",
+           verbose = TRUE,
+           refresh = -1,
+           chain_id= chain)})
+    stanfit <- sflist2stanfit(para_results)  # this takes only within 1 sec
+    
+  } else { 
+    cat("Calling", nChains, "simulations using serial method... \n")
+    
+    stanfit <- stan(modelFile,
+                    fit     = fitOBJ,
+                    data    = dataList,
+                    pars    = poi,
+                    chains  = nChains,
+                    iter    = nSamples,
+                    warmup  = nBurnin,
+                    thin    = nThin,
+                    #init    = inits,
+                    init    = "random",
+                    verbose = FALSE)
+  }
   
   cat("Finishing", modelStr, "model simulation ... \n")
   endTime = Sys.time(); print(endTime)  
@@ -137,6 +155,47 @@ run_model <- function(modelStr, fitOBJ=NA) {
 
 
 #### nested functions #### ===========================================================================
+create_inits <- function(model, n.chains, n.subjects, paraType) {
+  
+  inits <-  list()
+  if (paraType == TRUE)   n.chains = 1
+  
+  for (c in 1:n.chains) {
+    
+    lr_mu_pr  = qnorm(runif(1,0.45,0.55))
+    tau_mu_pr = qnorm(runif(1,1.5,2.5)/10)
+    lr_sd     = runif(1,0,1.5)
+    tau_sd    = runif(1,0,1.5)
+    lr_row    = qnorm(runif(n.subjects,0.4,0.6))
+    tau_row   = qnorm(runif(n.subjects,1.5,2.5)/10)
+    
+    if ( model == "RevLearn_RL") {
+      
+      inits[[c]] <- list(lr_mu_pr  = lr_mu_pr,
+                         tau_mu_pr = tau_mu_pr,
+                         lr_sd     = lr_sd,
+                         tau_sd    = tau_sd,
+                         lr_row    = lr_row,
+                         tau_row   = tau_row)
+    } else if (model == "RevLearn_RLcoh"){
+      coha_mu  = runif(1,0.02,0.1)
+      cohw_mu  = runif(1,0.02,0.1)
+      coha_sd  = runif(1,0.02,0.5)
+      cohw_sd  = runif(1,0.02,0.5)
+      coha     = runif(n.subjects,0.02,0.1)
+      cohw     = runif(n.subjects,0.02,0.1)
+
+      inits[[c]] <- list(lr_mu_pr=lr_mu_pr, tau_mu_pr=tau_mu_pr, coha_mu =coha_mu, cohw_mu =cohw_mu,
+                         lr_sd   =lr_sd,    tau_sd   =tau_sd,    coha_sd =coha_sd, cohw_sd =cohw_sd,
+                         lr_row  =lr_row,   tau_row  =tau_row,   coha    =coha,    cohw    =cohw   )
+    
+    }
+  } # for
+
+    return(inits)
+} # function
+
+
 create_pois <- function(model){
   pois <- list()
   
@@ -197,24 +256,10 @@ create_pois <- function(model){
               "lr1_sd", "lr2_sd", "tau_sd", "coha_sd", "cohw_sd", "cfa_sd",
               "lr1", "lr2", "tau", "coha", "cohw", "cfa", 
               "log_lik", "lp__")
-  } else if (model == "RevLearn_RLbeta_alt1_bc") {
-    pois <- c("lr_mu", "thrs_mu", "beta_mu",
-              "lr_sd", "thrs_sd", "beta_sd",
-              "lr", "thrs", "beta",
-              "log_likc1", "log_likc2", "log_likb1", "log_likb2", "lp__")
-  } else if (model == "RevLearn_RLbeta_alt1_c") {
-    pois <- c("lr_mu", "beta_mu",
-              "lr_sd", "beta_sd",
-              "lr", "beta",
-              "log_likc1", "log_likc2", "lp__")
-  } else if (model == "RevLearn_RLbeta_alt2") {
-    pois <- c("lr_mu", "thrs_mu", "evid_wght_mu", "beta_mu",
-              "lr_sd", "thrs_sd", "evid_wght_sd", "beta_sd",
-              "lr", "thrs", "evid_wght", "beta",
-              "log_likc1", "log_likc2", "log_likb1", "log_likb2", "lp__")
   }
   
   return(pois)
 } # function
+
 
 #### end of function ####

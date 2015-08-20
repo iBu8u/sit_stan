@@ -2,10 +2,17 @@ source("_scripts/stan_run.R")
 source("_scripts/waic.R")
 source("_scripts/compute_map.r")
 source("_scripts/get_mcmc.R")
-source("_scripts/DBDA2E-utilities.R")
+#source("_scripts/DBDA2E-utilities.R")
 #library(shinyStan) # seems not possible to install on Kassandra
 library(rstan)
+library(loo)
 library(R.matlab)
+
+
+# ---- convert .mat data into .RData
+# t <- readMat("_data/data3_129.mat")
+# mydata <- t$data3
+# save(mydata, file = '_data/sit_reversal_betnoshow_129.rdata')
 
 # ---- obtain mcmc -----------------------
 # mcmcCoda <- mcmc.list( lapply( 1:ncol(out1), function(x){mcmc(as.array(out1)[,x,])}))
