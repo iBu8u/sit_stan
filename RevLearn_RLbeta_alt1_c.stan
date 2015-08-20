@@ -12,7 +12,7 @@ data {
 
 transformed data {
   vector[2] initV;  // initial values for V
-  int B;           // number of predictors
+  int B;            // number of predictors
   
   initV <- rep_vector(0.0,2); 
   B     <- 6;

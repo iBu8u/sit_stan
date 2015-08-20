@@ -56,7 +56,9 @@ run_model <- function(modelStr, fitOBJ=NA) {
     my1     <- 0; other1  <- c(0,0,0,0)
     otherChoice <- array(0,dim = c(ns,nt,4)); otherReward <- array(0,dim = c(ns,nt,4))
     pref        <- array(0,dim = c(ns,nt,4)); wOthers     <- array(0,dim = c(ns,nt,4)) # others' weight [.75 .5 .25 .25]
-    wghtValue   <- array(0,dim = c(ns,nt,2));
+    wghtValue   <- array(0,dim = c(ns,nt,2)) # others' value based on weight
+    cfsC2       <- array(0,dim = c(ns,nt,4)) # cumulative-window frequency, same as my C2 
+    cfoC2       <- array(0,dim = c(ns,nt,4)) # cumulative-window frequency, opposite to my C2
     
     chswtch <- t(mydata[,5,])
     bet1    <- t(mydata[,13,]); bet2    <- t(mydata[,19,])
@@ -65,15 +67,14 @@ run_model <- function(modelStr, fitOBJ=NA) {
       otherReward[s,,] <- mydata[,24:27,s]
       pref[s,,]        <- mydata[,47:50,s]
       wOthers[s,,]     <- mydata[,51:54,s]
-    }
-    for (s in 1:s) {
-      wghtValue[s,,] <- mydata[,59:60,s] # others' value based on weight
-    }
-    for (s in 1:ns) {
+      wghtValue[s,,]   <- mydata[,59:60,s]
+      cfsC2[s,,]       <- mydata[,61:64,s]
+      cfoC2[s,,]       <- mydata[,65:68,s]
+      
       for (t in 1:nt){
         my1 <- mydata[t,3,s]; other1 <- mydata[t,6:9,s]
-        with[s,t]    <- length(which(other1==my1))  # count of with, either 1, 2, 3, or 4, divided by 4
-        against[s,t] <- length(which(other1!=my1))  # count of against, either 1, 2, 3, or 4, divided by 4 
+        with[s,t]    <- length(which(other1==my1))  # count of with, either 1, 2, 3, or 4
+        against[s,t] <- length(which(other1!=my1))  # count of against, either 1, 2, 3, or 4
       }
     }
     
@@ -81,10 +82,10 @@ run_model <- function(modelStr, fitOBJ=NA) {
     dataList$otherChoice <- otherChoice
     dataList$otherReward <- otherReward
     dataList$wghtValue   <- wghtValue
-    dataList$bet1    <- bet1;    dataList$bet2    <- bet2
-    dataList$with    <- with;    dataList$against <- against
-    dataList$pref    <- pref;    dataList$wOthers <- wOthers
-    
+    dataList$bet1    <- bet1;   dataList$bet2    <- bet2
+    dataList$with    <- with;   dataList$against <- against
+    dataList$pref    <- pref;   dataList$wOthers <- wOthers
+    dataList$cfsC2   <- cfsC2;  dataList$cfoC2   <- cfoC2;
     
   } else if (modelStr == "RevLearn_RLcumrew" || modelStr == "RevLearn_RLcumrew_cfa" || 
              modelStr == "RevLearn_RLcumrew_2lr" || modelStr == "RevLearn_RLcumrew_2lr_cfa" ) {
