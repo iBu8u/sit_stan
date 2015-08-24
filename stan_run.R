@@ -5,6 +5,49 @@ run_model <- function(modelStr, fitOBJ=NA) {
   options(mc.cores = 4)
   
   #### prepare data #### ===========================================================================
+  dataList <- prep_data(modelStr)
+    
+  #### preparation for running stan #### ============================================================
+  # model string in a separate .stan file
+  modelFile <- paste0("_scripts/",modelStr,".stan")
+
+  # setup up Stan configuration
+  nSamples <- 1#2000
+  nChains  <- 1#4 
+  nBurnin  <- floor(nSamples/2)
+  nThin    <- 1
+  
+  # parameter of interest (this could save both memory and space)
+  poi <- create_pois(modelStr)
+
+  #### run stan ####  ==============================================================================
+  cat("Estimating", modelStr, "model... \n")
+  startTime = Sys.time(); print(startTime)
+  
+  cat("Calling", nChains, "simulations in Stan... \n")
+  stanfit <- stan(modelFile,
+                fit     = fitOBJ,
+                data    = dataList,
+                pars    = poi,
+                chains  = nChains,
+                iter    = nSamples,
+                warmup  = nBurnin,
+                thin    = nThin,
+                init    = "random",
+                verbose = FALSE)
+  
+  cat("Finishing", modelStr, "model simulation ... \n")
+  endTime = Sys.time(); print(endTime)  
+  cat("It took",as.character.Date(endTime - startTime), "\n")
+  
+  return(stanfit)
+}  # function run_model()
+
+
+#### nested functions #### ===========================================================================
+
+prep_data <- function(modelstr){
+  
   load("_data/sit_reversal_betnoshow_129.rdata")
   dataList <- list()
   sz <- dim(mydata)
@@ -19,13 +62,13 @@ run_model <- function(modelStr, fitOBJ=NA) {
   dataList$choice2 <- choice2
   dataList$reward  <- reward
   
-  if (modelStr == "RevLearn_RLcoh" || modelStr == "RevLearn_RLcoh_cfa" || 
-             modelStr == "RevLearn_RLcoh_2lr" || modelStr == "RevLearn_RLcoh_2lr_cfa" ||
-             modelStr == "RevLearn_RLcoh_modvalue" || modelStr == "RevLearn_RLcoh_modprob_tempin" || 
-             modelStr == "RevLearn_RLcoh_modprob_tempout" || modelStr == "RevLearn_RLcoh_2lr2t_modvalue" ||
-             modelStr == "RevLearn_RLcoh_2lr2t_modprob_tempin" || modelStr == "RevLearn_RLcoh_2lr2t_modprob_tempout" ||
-             modelStr == "RevLearn_RLcoh_2lr2t_modprob_tempin_bern" ||
-             modelStr == "RevLearn_RLcoh_2lr_bet") {
+  if (modelstr == "RevLearn_RLcoh" || modelstr == "RevLearn_RLcoh_cfa" || 
+      modelstr == "RevLearn_RLcoh_2lr" || modelstr == "RevLearn_RLcoh_2lr_cfa" ||
+      modelstr == "RevLearn_RLcoh_modvalue" || modelstr == "RevLearn_RLcoh_modprob_tempin" || 
+      modelstr == "RevLearn_RLcoh_modprob_tempout" || modelstr == "RevLearn_RLcoh_2lr2t_modvalue" ||
+      modelstr == "RevLearn_RLcoh_2lr2t_modprob_tempin" || modelstr == "RevLearn_RLcoh_2lr2t_modprob_tempout" ||
+      modelstr == "RevLearn_RLcoh_2lr2t_modprob_tempin_bern" ||
+      modelstr == "RevLearn_RLcoh_2lr_bet") {
     
     chswtch <- array(0,dim = c(ns,nt))
     bet1    <- array(0,dim = c(ns,nt)); bet2    <- array(0,dim = c(ns,nt))
@@ -34,7 +77,7 @@ run_model <- function(modelStr, fitOBJ=NA) {
     
     chswtch <- t(mydata[,5,])
     bet1    <- t(mydata[,13,]); bet2    <- t(mydata[,19,])
-
+    
     for (s in 1:ns) {
       for (tr in 1:nt){
         my1 <- mydata[tr,3,s]; other1 <- mydata[tr,6:9,s]
@@ -46,10 +89,9 @@ run_model <- function(modelStr, fitOBJ=NA) {
     dataList$chswtch <- chswtch
     dataList$bet1    <- bet1;    dataList$bet2    <- bet2
     dataList$with    <- with;    dataList$against <- against
-
-  } else if (modelStr == "RevLearn_RLbeta_alt1_c" || modelStr == "RevLearn_RLbeta_alt1_c_2lr" || modelStr == "RevLearn_RLbeta_alt1_bc" || 
-             modelStr == "RevLearn_RLbeta_alt2_c" || modelStr == "RevLearn_RLbeta_alt2_bc") { 
     
+  } else if (modelstr == "RevLearn_RLbeta_alt1_c" || modelstr == "RevLearn_RLbeta_alt1_c_2lr" || modelstr == "RevLearn_RLbeta_alt1_bc" || 
+             modelstr == "RevLearn_RLbeta_alt2_c" || modelstr == "RevLearn_RLbeta_alt2_bc") { 
     
     chswtch <- array(0,dim = c(ns,nt))
     bet1    <- array(0,dim = c(ns,nt)); bet2    <- array(0,dim = c(ns,nt))
@@ -88,57 +130,22 @@ run_model <- function(modelStr, fitOBJ=NA) {
     dataList$pref    <- pref;   dataList$wOthers <- wOthers
     dataList$cfsC2   <- cfsC2;  dataList$cfoC2   <- cfoC2;
     
-  } else if (modelStr == "RevLearn_RLcumrew" || modelStr == "RevLearn_RLcumrew_cfa" || 
-             modelStr == "RevLearn_RLcumrew_2lr" || modelStr == "RevLearn_RLcumrew_2lr_cfa" ) {
+  } else if (modelstr == "RevLearn_RLcumrew" || modelstr == "RevLearn_RLcumrew_cfa" || 
+             modelstr == "RevLearn_RLcumrew_2lr" || modelstr == "RevLearn_RLcumrew_2lr_cfa" ) {
     
     otherChoice <- array(0,dim = c(ns,nt,4));  otherReward <- array(0,dim = c(ns,nt,4))
-
+    
     for (s in 1:ns) {
       otherChoice[s,,] <- mydata[,6:9,s]
       otherReward[s,,] <- mydata[,24:27,s]
     }
-    
     dataList$otherChoice <- otherChoice; dataList$otherReward <- otherReward
   }
-    
-  #### preparation for running stan #### ============================================================
-  # model string in a separate .stan file
-  modelFile <- paste0("_scripts/",modelStr,".stan")
-
-  # setup up Stan configuration
-  nSamples <- 2000
-  nChains  <- 4 
-  nBurnin  <- floor(nSamples/2)
-  nThin    <- 1
   
-  # parameter of interest (this could save both memory and space)
-  poi <- create_pois(modelStr)
-
-  #### run stan ####  ==============================================================================
-  cat("Estimating", modelStr, "model... \n")
-  startTime = Sys.time(); print(startTime)
-  
-  cat("Calling", nChains, "simulations in Stan... \n")
-  stanfit <- stan(modelFile,
-                fit     = fitOBJ,
-                data    = dataList,
-                pars    = poi,
-                chains  = nChains,
-                iter    = nSamples,
-                warmup  = nBurnin,
-                thin    = nThin,
-                init    = "random",
-                verbose = FALSE)
-  
-  cat("Finishing", modelStr, "model simulation ... \n")
-  endTime = Sys.time(); print(endTime)  
-  cat("It took",as.character.Date(endTime - startTime), "\n")
-  
-  return(stanfit)
-}  # function run_model()
+  return(dataList)
+} # function
 
 
-#### nested functions #### ===========================================================================
 create_pois <- function(model){
   pois <- list()
   
@@ -220,7 +227,6 @@ create_pois <- function(model){
               "lr", "evidW", "beta",
               "log_likc1", "log_likc2", "lp__")
   }
-  
   
   return(pois)
 } # function
