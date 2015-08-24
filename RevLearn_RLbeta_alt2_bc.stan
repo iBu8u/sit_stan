@@ -147,8 +147,10 @@ model {
 generated quantities {
   real<lower=0,upper=1> lr_mu[2]; 
   
-  real log_lik1[nSubjects]; 
-  real log_lik2[nSubjects]; 
+  real log_likc1[nSubjects]; 
+  real log_likc2[nSubjects]; 
+  real log_likb1[nSubjects]; 
+  real log_likb2[nSubjects]; 
   vector[2] myValue2[nTrials+1];
   vector[2] otherValue2[nTrials+1];
   vector[nTrials] pe2;
@@ -158,6 +160,10 @@ generated quantities {
   real valfun2_gen;
   real betfun1_gen;
   real betfun2_gen;
+  real prob_sC2_gen[nTrials,4];  
+  real prob_oC2_gen[nTrials,4]; 
+  real wProb_sC2_gen[nTrials,4];
+  real wProb_oC2_gen[nTrials,4];
   
   for (i in 1:2) {
     lr_mu[i]  <- Phi_approx(lr_mu_pr[i]);
@@ -166,31 +172,41 @@ generated quantities {
   for (s in 1:nSubjects) {
     myValue2[1]    <- initV;
     otherValue2[1] <- initV;
-    log_lik1[s]   <- 0;
-    log_lik2[s]   <- 0;
+    log_likc1[s]   <- 0;
+    log_likc2[s]   <- 0;
+    log_likb1[s]   <- 0;
+    log_likb2[s]   <- 0;
 
     for (t in 1:nTrials) {
       valfun1_gen <- beta[1][s]*myValue2[t] + beta[2][s]*otherValue2[t];
-      log_lik1[s] <- log_lik1[s] + categorical_logit_log(choice1[s,t], valfun1_gen);
+      log_likc1[s] <- log_likc1[s] + categorical_logit_log(choice1[s,t], valfun1_gen);
 
-      valdiff_gen <- myValue2[t][choice1[s,t]] - myValue2[t][3-choice1[s,t]];
-      // betfun1 <- beta[s][3] * valdiff, c)
-      // bet1[s,t] ~ ordered_logistic( betfun1, c); ---LZ debug
 
-      valfun2_gen <- beta[4][s] + beta[5][s]*valdiff_gen + beta[6][s]*with[s,t] + beta[7][s]*against[s,t];
-      log_lik2[s] <- log_lik2[s] + bernoulli_logit_log(chswtch[s,t], valfun2_gen);
+      valdiff_gen  <- myValue2[t][choice1[s,t]] - myValue2[t][3-choice1[s,t]];
+      betfun1_gen  <- beta[3][s] * valdiff_gen;
+      log_likb1[s] <- log_likb1[s] + ordered_logistic_log(bet1[s,t], betfun1_gen, thrs[s] );
 
-      // betfun2 <- beta[8][s]*valdiff + beta[9][s]*bet1[s,t] + beta[10][s]*with[s,t] + beta[11][s]*against[s,t];
-      // bet2[s,t] ~ ordered_logistic( betfun2, c); ---LZ
+      valfun2_gen  <- beta[4][s] + beta[5][s]*valdiff_gen + beta[6][s]*with[s,t] + beta[7][s]*against[s,t];
+      log_likc2[s] <- log_likc2[s] + bernoulli_logit_log(chswtch[s,t], valfun2_gen);
+
+      betfun2_gen  <- beta[8][s]*valdiff_gen + beta[9][s]*bet1[s,t] + beta[10][s]*with[s,t] + beta[11][s]*against[s,t];
+      log_likb2[s] <- log_likb2[s] + ordered_logistic_log(bet2[s,t], betfun2_gen, thrs[s] );
 
       pe2[t]   <-  reward[s,t] - myValue2[t][choice2[s,t]];
       penc2[t] <- -reward[s,t] - myValue2[t][3-choice2[s,t]];
       
       myValue2[t+1][choice2[s,t]]   <- myValue2[t][choice2[s,t]]   + lr[1][s] * pe2[t];
       myValue2[t+1][3-choice2[s,t]] <- myValue2[t][3-choice2[s,t]] + lr[2][s] * penc2[t];
-      
-//       otherValue2[t+1][choice2[s,t]]   <- wghtValue[s,t,choice2[s,t]];
-//       otherValue2[t+1][3-choice2[s,t]] <- wghtValue[s,t,3-choice2[s,t]];
+
+      for (o in 1:4) {
+        prob_sC2_gen[t,o] <- beta_cdf(0.5, evidW[1][s]*cfoC2[s,t,o] , evidW[2][s]*cfsC2[s,t,o] );
+        prob_oC2_gen[t,o] <- 1 - prob_sC2_gen[t,o];
+        wProb_sC2_gen[t,o] <- wOthers[s,t,o] .* prob_sC2_gen[t,o];
+        wProb_oC2_gen[t,o] <- wOthers[s,t,o] .* prob_oC2_gen[t,o];
+      }
+      otherValue2[t+1][choice2[s,t]]   <- sum( wProb_sC2_gen[t] );
+      otherValue2[t+1][3-choice2[s,t]] <- sum( wProb_oC2_gen[t] );
+
     }  // trial loop
   }    // subject loop
 }

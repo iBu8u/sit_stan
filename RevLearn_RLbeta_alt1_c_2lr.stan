@@ -20,25 +20,27 @@ transformed data {
 
 parameters {
   // group-level parameters
-  real lr_mu_pr;
+  vector[2] lr_mu_pr;
   vector[B] beta_mu;
 
-  real<lower=0> lr_sd;
+  vector<lower=0>[2] lr_sd;
   vector<lower=0>[B] beta_sd;
   
   // subject-level raw parameters, follows norm(0,1), for later Matt Trick
-  vector[nSubjects] lr_raw;        // dim: [2, nSubjects]
+  vector[nSubjects] lr_raw[2];        // dim: [2, nSubjects]
   vector[nSubjects] beta_raw[B];  
 }
 
 transformed parameters {
   // subject-level parameters
-  vector<lower=0,upper=1>[nSubjects] lr;
+  vector<lower=0,upper=1>[nSubjects] lr[2];
   vector[nSubjects] beta[B];
   
   // Matt Trick, note that the input of Phi_approx must be 'real' rather than 'vector'
   for (s in 1:nSubjects) {
-    lr[s]   <- Phi_approx( lr_mu_pr + lr_sd * lr_raw[s] );
+    for (i in 1:2) {
+      lr[i][s]    <- Phi_approx( lr_mu_pr[i] + lr_sd[i] * lr_raw[i][s] );
+    }
   }
   for (i in 1:B) {
     beta[i] <- beta_mu[i] + beta_sd[i] * beta_raw[i];
@@ -63,8 +65,9 @@ model {
   beta_sd  ~ cauchy(0,5);
   
   // Matt Trick
-  lr_raw   ~ normal(0,1);
-  
+  for (i in 1:2) {
+    lr_raw[i]   ~ normal(0,1);
+  }
   for (i in 1:B) {
     beta_raw[i] ~ normal(0,1);
   } 
@@ -88,8 +91,8 @@ model {
       penc[t] <- -reward[s,t] - myValue[t][3-choice2[s,t]];
 
       // update my value
-      myValue[t+1][choice2[s,t]]   <- myValue[t][choice2[s,t]]   + lr[s] * pe[t];
-      myValue[t+1][3-choice2[s,t]] <- myValue[t][3-choice2[s,t]] + lr[s] * penc[t];
+      myValue[t+1][choice2[s,t]]   <- myValue[t][choice2[s,t]]   + lr[1][s] * pe[t];
+      myValue[t+1][3-choice2[s,t]] <- myValue[t][3-choice2[s,t]] + lr[2][s] * penc[t];
 
       // use weighted choice + outcome to update the others' value
       otherValue[t+1][choice2[s,t]]   <- wghtValue[s,t,choice2[s,t]];
@@ -100,7 +103,7 @@ model {
 }
 
 generated quantities {
-  real<lower=0,upper=1> lr_mu; 
+  real<lower=0,upper=1> lr_mu[2]; 
   
   real log_likc1[nSubjects]; 
   real log_likc2[nSubjects]; 
@@ -112,8 +115,10 @@ generated quantities {
   vector[2] valfun1_gen;
   real valfun2_gen;
 
-  lr_mu <- Phi_approx(lr_mu_pr);
-
+  for (i in 1:2) {
+    lr_mu[i]  <- Phi_approx(lr_mu_pr[i]);
+  }
+  
   for (s in 1:nSubjects) {
     myValue2[1]    <- initV;
     otherValue2[1] <- initV;
@@ -133,8 +138,8 @@ generated quantities {
       pe2[t]   <-  reward[s,t] - myValue2[t][choice2[s,t]];
       penc2[t] <- -reward[s,t] - myValue2[t][3-choice2[s,t]];
       
-      myValue2[t+1][choice2[s,t]]   <- myValue2[t][choice2[s,t]]   + lr[s] * pe2[t];
-      myValue2[t+1][3-choice2[s,t]] <- myValue2[t][3-choice2[s,t]] + lr[s] * penc2[t];
+      myValue2[t+1][choice2[s,t]]   <- myValue2[t][choice2[s,t]]   + lr[1][s] * pe2[t];
+      myValue2[t+1][3-choice2[s,t]] <- myValue2[t][3-choice2[s,t]] + lr[2][s] * penc2[t];
       
       otherValue2[t+1][choice2[s,t]]   <- wghtValue[s,t,choice2[s,t]];
       otherValue2[t+1][3-choice2[s,t]] <- wghtValue[s,t,3-choice2[s,t]];

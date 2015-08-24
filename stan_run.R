@@ -47,8 +47,9 @@ run_model <- function(modelStr, fitOBJ=NA) {
     dataList$bet1    <- bet1;    dataList$bet2    <- bet2
     dataList$with    <- with;    dataList$against <- against
 
-  } else if (modelStr == "RevLearn_RLbeta_alt1_c" || modelStr == "RevLearn_RLbeta_alt1_bc" || 
+  } else if (modelStr == "RevLearn_RLbeta_alt1_c" || modelStr == "RevLearn_RLbeta_alt1_c_2lr" || modelStr == "RevLearn_RLbeta_alt1_bc" || 
              modelStr == "RevLearn_RLbeta_alt2_c" || modelStr == "RevLearn_RLbeta_alt2_bc") { 
+    
     
     chswtch <- array(0,dim = c(ns,nt))
     bet1    <- array(0,dim = c(ns,nt)); bet2    <- array(0,dim = c(ns,nt))
@@ -73,8 +74,8 @@ run_model <- function(modelStr, fitOBJ=NA) {
       
       for (t in 1:nt){
         my1 <- mydata[t,3,s]; other1 <- mydata[t,6:9,s]
-        with[s,t]    <- length(which(other1==my1))  # count of with, either 1, 2, 3, or 4
-        against[s,t] <- length(which(other1!=my1))  # count of against, either 1, 2, 3, or 4
+        with[s,t]    <- length(which(other1==my1))
+        against[s,t] <- length(which(other1!=my1))
       }
     }
     
@@ -105,9 +106,9 @@ run_model <- function(modelStr, fitOBJ=NA) {
   modelFile <- paste0("_scripts/",modelStr,".stan")
 
   # setup up Stan configuration
-  nSamples <- 10#4000
-  nChains  <- 1#4 
-  nBurnin  <- 0#floor(nSamples/2)
+  nSamples <- 2000
+  nChains  <- 4 
+  nBurnin  <- floor(nSamples/2)
   nThin    <- 1
   
   # parameter of interest (this could save both memory and space)
@@ -203,17 +204,23 @@ create_pois <- function(model){
               "lr_sd", "thrs_sd", "beta_sd",
               "lr", "thrs", "beta",
               "log_likc1", "log_likc2", "log_likb1", "log_likb2", "lp__")
-  } else if (model == "RevLearn_RLbeta_alt1_c") {
+  } else if (model == "RevLearn_RLbeta_alt1_c" || model == "RevLearn_RLbeta_alt1_c_2lr") {
     pois <- c("lr_mu", "beta_mu",
               "lr_sd", "beta_sd",
               "lr", "beta",
               "log_likc1", "log_likc2", "lp__")
-  } else if (model == "RevLearn_RLbeta_alt2") {
+  } else if (model == "RevLearn_RLbeta_alt2_bc") {
     pois <- c("lr_mu", "thrs_mu", "evid_wght_mu", "beta_mu",
               "lr_sd", "thrs_sd", "evid_wght_sd", "beta_sd",
               "lr", "thrs", "evid_wght", "beta",
               "log_likc1", "log_likc2", "log_likb1", "log_likb2", "lp__")
+  } else if (model == "RevLearn_RLbeta_alt2_c") {
+    pois <- c("lr_mu", "evidW_mu", "beta_mu",
+              "lr_sd", "evidW_sd", "beta_sd",
+              "lr", "evidW", "beta",
+              "log_likc1", "log_likc2", "lp__")
   }
+  
   
   return(pois)
 } # function
