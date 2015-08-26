@@ -84,22 +84,30 @@ model {
   crw_raw  ~ normal(0,1);
   
   // subject loop and trial loop
-  for (s in 1:nSubjects) {
+  // for (s in 1:nSubjects) {
+  for (s in 1:1) {
     v[1] <- initV;
     
     for (t in 1:nTrials) {      
       // start calculating cumulative reward --------------------
       matrix[t-1,4] wgtrew;
       
+      print("t = ", t, "--------------------------------------")
+      print("disc = ", disc[s])
+
       if (t <= 2) {
         cr[t] <- initCR;
       } else {
         for (ct in 1:(t-1)) {
           wgtrew[ct] <- (disc[s] ^ (t-ct)) * to_row_vector(otherReward[s,ct]);
+          print("weight[", ct, "] = ",  disc[s] ^ (t-ct))
         }
+        
+        print("wgtrew[",t,"]= ",wgtrew )
         for (o in 1:4) {
           cr[t,o] <- sum( sub_col(wgtrew, 1,o,t-1));
         }
+        print("cr[",t,"]= ", cr[t])
       }
       // cr calculation finished -------------------------
 

@@ -18,20 +18,23 @@ transformed data {
 
 parameters {
   // group-level parameters
-  real lr_mu_pr;    // lr_mu before probit
+  real lr1_mu_pr;   // lr1_mu before probit
+  real lr2_mu_pr;   // lr2_mu before probit
   real tau_mu_pr;   // tau_mu before probit  
   real disc_mu_pr;  // discounting gamma, before probit
   real cra_mu;
   real crw_mu;
 
-  real<lower=0> lr_sd;
+  real<lower=0> lr1_sd;
+  real<lower=0> lr2_sd;
   real<lower=0> tau_sd;
   real<lower=0> disc_sd;
   real<lower=0> cra_sd;
   real<lower=0> crw_sd;
   
   // subject-level row parameters, follows norm(0,1), for later Matt Trick
-  vector[nSubjects] lr_raw;
+  vector[nSubjects] lr1_raw;
+  vector[nSubjects] lr2_raw;
   vector[nSubjects] tau_raw;
   vector[nSubjects] disc_raw;
   vector[nSubjects] cra_raw;
@@ -40,7 +43,8 @@ parameters {
 
 transformed parameters {
   // subject-level parameters
-  vector<lower=0,upper=1>[nSubjects]  lr;
+  vector<lower=0,upper=1>[nSubjects] lr1;
+  vector<lower=0,upper=1>[nSubjects] lr2;
   vector<lower=0,upper=10>[nSubjects] tau;
   vector<lower=0,upper=1>[nSubjects]  disc;
   vector[nSubjects] cra;
@@ -48,7 +52,8 @@ transformed parameters {
 
   // Matt Trick, note that the input of Phi_approx must be 'real' rather than 'vector'
   for (s in 1:nSubjects) {
-    lr[s]   <- Phi_approx( lr_mu_pr   + lr_sd   * lr_raw[s] );
+    lr1[s]  <- Phi_approx( lr1_mu_pr + lr1_sd * lr1_raw[s] );
+    lr2[s]  <- Phi_approx( lr2_mu_pr + lr2_sd * lr2_raw[s] );
     tau[s]  <- Phi_approx( tau_mu_pr  + tau_sd  * tau_raw[s] ) * 10;
     disc[s] <- Phi_approx( disc_mu_pr + disc_sd * disc_raw[s] );
   }
@@ -64,20 +69,23 @@ model {
   matrix[nTrials,4] cr;    // cumulative reward
   
   // hyperparameters
-  lr_mu_pr   ~ normal(0,1);
+  lr1_mu_pr  ~ normal(0,1);
+  lr2_mu_pr  ~ normal(0,1);
   tau_mu_pr  ~ normal(0,1);
   disc_mu_pr ~ normal(0,1);
   cra_mu     ~ normal(0,1);
   crw_mu     ~ normal(0,1);
   
-  lr_sd   ~ cauchy(0,5);
+  lr1_sd  ~ cauchy(0,5);
+  lr2_sd  ~ cauchy(0,5);
   tau_sd  ~ cauchy(0,5);
   disc_sd ~ cauchy(0,5);
   cra_sd  ~ cauchy(0,5);
   crw_sd  ~ cauchy(0,5);
   
   // Matt Trick
-  lr_raw   ~ normal(0,1);
+  lr1_raw  ~ normal(0,1);
+  lr2_raw  ~ normal(0,1);
   tau_raw  ~ normal(0,1);
   disc_raw ~ normal(0,1);
   cra_raw  ~ normal(0,1);
@@ -115,14 +123,15 @@ model {
       penc[t] <- -reward[s,t] - v[t][3-choice2[s,t]];
 
       //* value updating (learning) */
-      v[t+1][choice2[s,t]]   <- v[t][choice2[s,t]]   + lr[s] * pe[t];
-      v[t+1][3-choice2[s,t]] <- v[t][3-choice2[s,t]] + lr[s] * penc[t];
+      v[t+1][choice2[s,t]]   <- v[t][choice2[s,t]]   + lr1[s] * pe[t];
+      v[t+1][3-choice2[s,t]] <- v[t][3-choice2[s,t]] + lr2[s] * penc[t];
     }
   }
 }
 
 generated quantities {
-  real<lower=0,upper=1>  lr_mu; 
+  real<lower=0,upper=1> lr1_mu; 
+  real<lower=0,upper=1> lr2_mu;
   real<lower=0,upper=10> tau_mu;
   real<lower=0,upper=1>  disc_mu;
 
@@ -133,7 +142,8 @@ generated quantities {
   matrix[nTrials,4] cr2;
   int<lower=1,upper=2> c_rep[nSubjects, nTrials];
   
-  lr_mu   <- Phi_approx(lr_mu_pr);
+  lr1_mu <- Phi_approx(lr1_mu_pr);
+  lr2_mu <- Phi_approx(lr2_mu_pr);
   tau_mu  <- Phi_approx(tau_mu_pr) * 10;
   disc_mu <- Phi_approx( disc_mu_pr );
 
@@ -164,8 +174,8 @@ generated quantities {
       pe2[t]   <-  reward[s,t] - v2[t][choice2[s,t]];
       penc2[t] <- -reward[s,t] - v2[t][3-choice2[s,t]];
 
-      v2[t+1][choice2[s,t]]   <- v2[t][choice2[s,t]]   + lr[s] * pe2[t];
-      v2[t+1][3-choice2[s,t]] <- v2[t][3-choice2[s,t]] + lr[s] * penc2[t];
+      v2[t+1][choice2[s,t]]   <- v2[t][choice2[s,t]]   + lr1[s] * pe2[t];
+      v2[t+1][3-choice2[s,t]] <- v2[t][3-choice2[s,t]] + lr2[s] * penc2[t];
     }
   }
 }

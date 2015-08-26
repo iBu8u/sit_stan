@@ -24,8 +24,8 @@ parameters {
   real<lower=0> tau_sd;
   //real<lower=0.01, upper=3> coha_sd;
   //real<lower=0.01, upper=3> cohw_sd;
-  real<lower=0.01> coha_sd;
-  real<lower=0.01> cohw_sd;
+  real<lower=0> coha_sd;
+  real<lower=0> cohw_sd;
   
   // subject-level raw parameters, follows norm(0,1), for later Matt Trick
   vector[nSubjects] lr_raw;
@@ -37,14 +37,14 @@ parameters {
 transformed parameters {
   // subject-level parameters
   vector<lower=0,upper=1>[nSubjects] lr;
-  vector<lower=0,upper=2.5>[nSubjects] tau;
+  vector<lower=0,upper=3>[nSubjects] tau;
   vector[nSubjects] coha;
   vector[nSubjects] cohw;
 
   // Matt Trick, note that the input of Phi_approx must be 'real' rather than 'vector'
   for (s in 1:nSubjects) {
     lr[s]  <- Phi_approx( lr_mu_pr + lr_sd * lr_raw[s] );
-    tau[s] <- Phi_approx( tau_mu_pr + tau_sd * tau_raw[s] ) * 2.5;
+    tau[s] <- Phi_approx( tau_mu_pr + tau_sd * tau_raw[s] ) * 3;
   }
   coha <- coha_mu + coha_sd * coha_raw;
   cohw <- cohw_mu + cohw_sd * cohw_raw;
@@ -57,15 +57,15 @@ model {
   vector[nTrials] penc;       // pe for the non-chosen choice
 
   // hyperparameters
-  lr_mu_pr   ~ normal(0,1);
-  tau_mu_pr  ~ normal(0,1);
-  coha_mu    ~ normal(0,1);
-  cohw_mu    ~ normal(0,1);
+  lr_mu_pr  ~ normal(0,1);
+  tau_mu_pr ~ normal(0,1);
+  coha_mu   ~ normal(0,1);
+  cohw_mu   ~ normal(0,1);
 
   lr_sd   ~ cauchy(0,5);
   tau_sd  ~ cauchy(0,5);
-  coha_sd ~ cauchy(0,3);
-  cohw_sd ~ cauchy(0,3);
+  coha_sd ~ cauchy(0,5);
+  cohw_sd ~ cauchy(0,5);
   
   // Matt Trick
   lr_raw   ~ normal(0,1);
@@ -97,15 +97,16 @@ model {
 
 generated quantities {
   real<lower=0,upper=1> lr_mu; 
-  real<lower=0,upper=2.5> tau_mu;
+  real<lower=0,upper=3> tau_mu;
   
   real log_lik[nSubjects]; 
   vector[2] v2[nTrials+1];
   vector[nTrials] pe2;
   vector[nTrials] penc2;
+  int<lower=1,upper=2> c_rep[nSubjects, nTrials];
   
   lr_mu  <- Phi_approx(lr_mu_pr);
-  tau_mu <- Phi_approx(tau_mu_pr) * 2.5;
+  tau_mu <- Phi_approx(tau_mu_pr) * 3;
   
   for (s in 1:nSubjects) {
     log_lik[s] <- 0;
@@ -116,6 +117,7 @@ generated quantities {
       v2[t][choice1[s,t]]   <- v2[t][choice1[s,t]]   + cohw[s] * with[s,t];
       
       log_lik[s] <- log_lik[s] + categorical_logit_log(choice2[s,t], tau[s] * v2[t]);
+      c_rep[s,t] <- categorical_rng( softmax(tau[s]*v2[t]) );
       
       pe2[t]   <-  reward[s,t] - v2[t][choice2[s,t]];
       penc2[t] <- -reward[s,t] - v2[t][3-choice2[s,t]];

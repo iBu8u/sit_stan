@@ -17,9 +17,9 @@ parameters {
   // group-level parameters
   real lr_mu_pr;    // lr_mu before probit
   real tau_mu_pr;   // tau_mu before probit  
+  real cfa_mu_pr;
   real coha_mu;
   real cohw_mu;
-  real cfa_mu_pr;
 
   real<lower=0> lr_sd;
   real<lower=0> tau_sd;
@@ -39,9 +39,9 @@ transformed parameters {
   // subject-level parameters
   vector<lower=0,upper=1>[nSubjects] lr;
   vector<lower=0,upper=3>[nSubjects] tau;
+  vector<lower=0,upper=1>[nSubjects] cfa;
   vector[nSubjects] coha;
   vector[nSubjects] cohw;
-  vector<lower=0,upper=1>[nSubjects] cfa;
 
   // Matt Trick, note that the input of Phi_approx must be 'real' rather than 'vector'
   for (s in 1:nSubjects) {
@@ -81,11 +81,9 @@ model {
   
   // subject loop and trial loop
   for (s in 1:nSubjects) {
-
     v[1] <- initV;
     
     for (t in 1:nTrials) {
-      
       //* re-weight value after have seen the group decisions */
       v[t][3-choice1[s,t]] <- v[t][3-choice1[s,t]] + coha[s] * against[s,t];
       v[t][choice1[s,t]]   <- v[t][choice1[s,t]]   + cohw[s] * with[s,t];
@@ -113,6 +111,7 @@ generated quantities {
   vector[2] v2[nTrials+1];
   vector[nTrials] pe2;
   vector[nTrials] penc2;
+  int<lower=1,upper=2> c_rep[nSubjects, nTrials];
 
   lr_mu   <- Phi_approx(lr_mu_pr);
   tau_mu  <- Phi_approx(tau_mu_pr) * 3;
@@ -127,6 +126,7 @@ generated quantities {
       v2[t][choice1[s,t]]   <- v2[t][choice1[s,t]]   + cohw[s] * with[s,t];
       
       log_lik[s] <- log_lik[s] + categorical_logit_log(choice2[s,t], tau[s] * v2[t]);
+      c_rep[s,t] <- categorical_rng( softmax(tau[s]*v2[t]) );
       
       pe2[t]   <-  reward[s,t] - v2[t][choice2[s,t]];
       penc2[t] <- (-reward[s,t]*cfa[s]) - v2[t][3-choice2[s,t]];

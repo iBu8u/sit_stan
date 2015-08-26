@@ -113,6 +113,7 @@ generated quantities {
   vector[2] v2[nTrials+1];
   vector[nTrials] pe2;
   vector[nTrials] penc2;
+  int<lower=1,upper=2> c_rep[nSubjects, nTrials];
   
   lr1_mu <- Phi_approx(lr1_mu_pr);
   lr2_mu <- Phi_approx(lr2_mu_pr);
@@ -127,6 +128,7 @@ generated quantities {
       v2[t][choice1[s,t]]   <- v2[t][choice1[s,t]]   + cohw[s] * with[s,t];
 
       log_lik[s] <- log_lik[s] + categorical_logit_log(choice2[s,t], tau[s] * v2[t]);
+      c_rep[s,t] <- categorical_rng( softmax(tau[s]*v2[t]) );
 
       pe2[t]   <-  reward[s,t] - v2[t][choice2[s,t]];
       penc2[t] <- -reward[s,t] - v2[t][3-choice2[s,t]];
