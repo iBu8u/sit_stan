@@ -1,4 +1,4 @@
-run_model <- function(modelStr, fitOBJ=NA) {
+run_model <- function(modelStr, test = TRUE) {
 
   library(rstan); library(parallel); library(loo)
   rstan_options(auto_write = TRUE)
@@ -12,10 +12,18 @@ run_model <- function(modelStr, fitOBJ=NA) {
   modelFile <- paste0("_scripts/",modelStr,".stan")
 
   # setup up Stan configuration
-  nSamples <- 4000
-  nChains  <- 4 
-  nBurnin  <- floor(nSamples/2)
-  nThin    <- 1
+  
+  if (test == TRUE) {
+    nSamples <- 8
+    nChains  <- 1 
+    nBurnin  <- 0
+    nThin    <- 1
+  } else {
+    nSamples <- 2000
+    nChains  <- 4 
+    nBurnin  <- floor(nSamples/2)
+    nThin    <- 1
+  }
   
   # parameter of interest (this could save both memory and space)
   poi <- create_pois(modelStr)
@@ -26,7 +34,6 @@ run_model <- function(modelStr, fitOBJ=NA) {
   
   cat("Calling", nChains, "simulations in Stan... \n")
   stanfit <- stan(modelFile,
-                fit     = fitOBJ,
                 data    = dataList,
                 pars    = poi,
                 chains  = nChains,
@@ -117,8 +124,8 @@ prep_data <- function(modelstr){
       
       for (t in 1:nt){
         my1 <- mydata[t,3,s]; other1 <- mydata[t,6:9,s]
-        with[s,t]    <- length(which(other1==my1)) / 4
-        against[s,t] <- length(which(other1!=my1)) / 4
+        with[s,t]    <- length(which(other1==my1)) /4
+        against[s,t] <- length(which(other1!=my1)) /4
       }
     }
     

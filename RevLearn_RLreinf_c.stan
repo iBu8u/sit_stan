@@ -7,7 +7,7 @@ data {
   real<lower=-1,upper=1> reward[nSubjects,nTrials];          // outcome, 1 or -1
   real<lower=0,upper=4> with[nSubjects,nTrials];             // No. of with
   real<lower=0,upper=4> against[nSubjects,nTrials];          // No. of against
-  real<lower=0.25,upper=1> wOthers[nSubjects,nTrials,4];     // others' weight based on pref
+  real<lower=0.25,upper=0.75> wOthers[nSubjects,nTrials,4];  // others' weight based on pref
   real<lower=0,upper=5> cfsC2[nSubjects,nTrials,4];          // cum-window freq, same as my C2
   real<lower=0,upper=5> cfoC2[nSubjects,nTrials,4];          // cum-window freq, opposite to my C2
 }
@@ -45,8 +45,8 @@ transformed parameters {
   // Matt Trick, note that the input of Phi_approx must be 'real' rather than 'vector'
   for (i in 1:2)           {
     for (s in 1:nSubjects) {
-      lr[i,s]    <- Phi_approx( lr_mu_pr[i] + lr_sd[i] * lr_raw[i,s] );
-      evidW[i,s] <- Phi_approx( evidW_mu_pr[i] + evidW_sd[i] * evidW_raw[i,s] );
+      lr[i][s]    <- Phi_approx( lr_mu_pr[i] + lr_sd[i] * lr_raw[i][s] );
+      evidW[i][s] <- Phi_approx( evidW_mu_pr[i] + evidW_sd[i] * evidW_raw[i][s] );
     }
   }
   for (i in 1:B) {  // partial vectorization
@@ -92,32 +92,42 @@ model {
     otherValue[1] <- initV;
     
     for (t in 1:nTrials) {
-      valfun1 <- beta[1,s]*myValue[t] + beta[2,s]*otherValue[t];
+      valfun1 <- beta[1][s]*myValue[t] + beta[2][s]*otherValue[t];
       choice1[s,t] ~ categorical_logit( valfun1 );
       
-      valdiff <- myValue[t,choice1[s,t]] - myValue[t,3-choice1[s,t]];
-      valfun2 <- beta[3,s] + beta[4,s]*valdiff + beta[5,s]*with[s,t] + beta[6,s]*against[s,t];
-      chswtch[s,t] ~ bernoulli_logit( valfun2 );
+      valdiff <- myValue[t][choice1[s,t]] - myValue[t][3-choice1[s,t]];
+      valfun2 <- beta[3][s] + beta[4][s]*valdiff + beta[5][s]*with[s,t] + beta[6][s]*against[s,t];
+      chswtch[s,t] ~ bernoulli_logit(valfun2);
       
       // my prediction error
-      pe[t]   <-  reward[s,t] - myValue[t,choice2[s,t]];
-      penc[t] <- -reward[s,t] - myValue[t,3-choice2[s,t]];
+      pe[t]   <-  reward[s,t] - myValue[t][choice2[s,t]];
+      penc[t] <- -reward[s,t] - myValue[t][3-choice2[s,t]];
       
       // update my value
-      myValue[t+1,choice2[s,t]]   <- myValue[t,choice2[s,t]]   + lr[1,s] * pe[t];
-      myValue[t+1,3-choice2[s,t]] <- myValue[t,3-choice2[s,t]] + lr[2,s] * penc[t];
+      myValue[t+1][choice2[s,t]]   <- myValue[t][choice2[s,t]]   + lr[1][s] * pe[t];
+      myValue[t+1][3-choice2[s,t]] <- myValue[t][3-choice2[s,t]] + lr[2][s] * penc[t];
       
       // use choice preference from others to update the others' value
       for (o in 1:4) {
         // [note] the [a b] parameter of beta_cdf must be positive, and count from beta(1,1)
-        prob_sC2[o]  <- beta_cdf(0.5, evidW[1,s]*cfoC2[s,t,o] + 1, evidW[2,s]*cfsC2[s,t,o] + 1 );        
+        prob_sC2[o]  <- beta_cdf(0.5, evidW[1][s]*cfoC2[s,t,o] + 1, evidW[2][s]*cfsC2[s,t,o] + 1 );
+        prob_oC2[o]  <- 1 - prob_sC2[o];
+        wProb_sC2[o] <- wOthers[s,t,o] * prob_sC2[o];
+        wProb_oC2[o] <- wOthers[s,t,o] * prob_oC2[o];
       }
-      prob_oC2  <- 1 - prob_sC2;
-      wProb_sC2 <- to_vector(wOthers[s,t]) .* prob_sC2;
-      wProb_oC2 <- to_vector(wOthers[s,t]) .* prob_oC2;
-
-      otherValue[t+1,choice2[s,t]]   <- sum( wProb_sC2 );
-      otherValue[t+1,3-choice2[s,t]] <- sum( wProb_oC2 );
+      
+      %%% this part is new --------------------------------------
+      othV = zeros(4,2,nTrials);
+      for (o in 1:4) {
+          othActProb[o,t,;] <- softmax( temp[o] * othV[o,:] )
+          othV[o,c2,t+1] <- othV[o,c2,t] + lr[o] * (othRew[o] - othV[o,c2]);
+          wProb_sC2[o] <- wOthers[s,t,o] * othActProb[o,c2];
+          wProb_oC2[o] <- wOthers[s,t,o] * othActProb[o.~c2];
+      }
+      %%% end of the new part -----------------------------------
+      
+      otherValue[t+1][choice2[s,t]]   <- sum( wProb_sC2 );
+      otherValue[t+1][3-choice2[s,t]] <- sum( wProb_oC2 );
     }  // trial loop
   }    // subject loop
 }
@@ -152,26 +162,26 @@ generated quantities {
     log_likc2[s]   <- 0;
     
     for (t in 1:nTrials) {
-      valfun1_gen  <- beta[1,s]*myValue2[t] + beta[2,s]*otherValue2[t];
+      valfun1_gen  <- beta[1][s]*myValue2[t] + beta[2][s]*otherValue2[t];
       log_likc1[s] <- log_likc1[s] + categorical_logit_log(choice1[s,t], valfun1_gen);
       
-      valdiff_gen  <- myValue2[t,choice1[s,t]] - myValue2[t,3-choice1[s,t]];
-      valfun2_gen  <- beta[3,s] + beta[4,s]*valdiff_gen + beta[5,s]*with[s,t] + beta[6,s]*against[s,t];
+      valdiff_gen  <- myValue2[t][choice1[s,t]] - myValue2[t][3-choice1[s,t]];
+      valfun2_gen  <- beta[3][s] + beta[4][s]*valdiff_gen + beta[5][s]*with[s,t] + beta[6][s]*against[s,t];
       log_likc2[s] <- log_likc2[s] + bernoulli_logit_log(chswtch[s,t], valfun2_gen);
       
-      pe2[t]   <-  reward[s,t] - myValue2[t,choice2[s,t]];
-      penc2[t] <- -reward[s,t] - myValue2[t,3-choice2[s,t]];
-      myValue2[t+1,choice2[s,t]]   <- myValue2[t,choice2[s,t]]   + lr[1,s] * pe2[t];
-      myValue2[t+1,3-choice2[s,t]] <- myValue2[t,3-choice2[s,t]] + lr[2,s] * penc2[t];
+      pe2[t]   <-  reward[s,t] - myValue2[t][choice2[s,t]];
+      penc2[t] <- -reward[s,t] - myValue2[t][3-choice2[s,t]];
+      myValue2[t+1][choice2[s,t]]   <- myValue2[t][choice2[s,t]]   + lr[1][s] * pe2[t];
+      myValue2[t+1][3-choice2[s,t]] <- myValue2[t][3-choice2[s,t]] + lr[2][s] * penc2[t];
 
       for (o in 1:4) {
-        prob_sC2_gen[o]  <- beta_cdf(0.5, evidW[1,s]*cfoC2[s,t,o] + 1, evidW[2,s]*cfsC2[s,t,o] + 1 );
+        prob_sC2_gen[o]  <- beta_cdf(0.5, evidW[1][s]*cfoC2[s,t,o] + 1, evidW[2][s]*cfsC2[s,t,o] + 1 );
         prob_oC2_gen[o]  <- 1 - prob_sC2_gen[o];
         wProb_sC2_gen[o] <- wOthers[s,t,o] * prob_sC2_gen[o];
         wProb_oC2_gen[o] <- wOthers[s,t,o] * prob_oC2_gen[o];
       }
-      otherValue2[t+1,choice2[s,t]]   <- sum( wProb_sC2_gen );
-      otherValue2[t+1,3-choice2[s,t]] <- sum( wProb_oC2_gen );
+      otherValue2[t+1][choice2[s,t]]   <- sum( wProb_sC2_gen );
+      otherValue2[t+1][3-choice2[s,t]] <- sum( wProb_oC2_gen );
     }  // trial loop
   }    // subject loop
 }

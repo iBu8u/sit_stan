@@ -9,7 +9,7 @@ data {
   real<lower=-1,upper=1> reward[nSubjects,nTrials];        // outcome, 1 or -1
   real<lower=0,upper=4>  with[nSubjects,nTrials];          // No. of with / 4
   real<lower=0,upper=4>  against[nSubjects,nTrials];       // No. of against / 4
-  real<lower=0,upper=1>  wOthers[nSubjects,nTrials,4];     // others' weight based on pref
+  real<lower=0.25,upper=1> wOthers[nSubjects,nTrials,4];   // others' weight based on pref
   real<lower=0,upper=5>  cfsC2[nSubjects,nTrials,4];       // cum-window freq, same as my C2
   real<lower=0,upper=5>  cfoC2[nSubjects,nTrials,4];       // cum-window freq, opposite to my C2
 }

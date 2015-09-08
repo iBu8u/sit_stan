@@ -1,14 +1,14 @@
-ppc <- function(stanfit, choice = NULL, sid = NULL, gid = NULL) {
+ppc <- function(stanfit,  choice = NULL, sid = NULL, gid = NULL) {
   
   ## ppc: posterior predictive check=====================================
   
   #### data preparation and initialize -----------------------------------
   library(rstan); library(ggplot2); library(reshape2)
   load("_data/sit_reversal_betnoshow_129.rdata")
-  sz <- dim(data)
+  sz <- dim(mydata)
   nt <- sz[1]; ns <- sz[3]
   choice1  <- array(0,dim = c(ns,nt)); choice2  <- array(0,dim = c(ns,nt)); reversal <- array(0,dim = c(ns,nt))
-  choice1  <-  t(data[,3,]);           choice2  <-  t(data[,10,]);          reversal <- t(data[,2,])
+  choice1  <- t(mydata[,3,]);          choice2  <-  t(mydata[,10,]);        reversal <- t(mydata[,2,])
   acc      <- array(0,dim = c(ns,nt))
   
   if ( is.null(choice) )  {
@@ -38,7 +38,10 @@ ppc <- function(stanfit, choice = NULL, sid = NULL, gid = NULL) {
   
   ## plot per subject, plus the reversal point -------------------------------------------
   if (!is.null(sid)) {
-    p = qplot(1:nt, acc[sid,], geom ='line')
+    theme_set(theme_gray(base_size = 18))
+    accuracy = acc[sid,]
+    trial = 1:nt
+    p = qplot(trial, accuracy, geom ='line')
     p = p + geom_vline(xintercept=which(reversal[sid,]==1), colour="red", linetype="longdash")
     print(p)
   }
