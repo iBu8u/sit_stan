@@ -139,6 +139,7 @@ generated quantities {
   vector[4] prob_oC2_gen;
   vector[4] wProb_sC2_gen;
   vector[4] wProb_oC2_gen;
+  int<lower=0,upper=1> c_rep[nSubjects, nTrials];
   
   for (i in 1:2) {
     lr_mu[i]    <- Phi_approx(lr_mu_pr[i]);
@@ -158,6 +159,8 @@ generated quantities {
       valdiff_gen  <- myValue2[t,choice1[s,t]] - myValue2[t,3-choice1[s,t]];
       valfun2_gen  <- beta[3,s] + beta[4,s]*valdiff_gen + beta[5,s]*with[s,t] + beta[6,s]*against[s,t];
       log_likc2[s] <- log_likc2[s] + bernoulli_logit_log(chswtch[s,t], valfun2_gen);
+
+      c_rep[s,t]   <- bernoulli_rng( inv_logit(valfun2_gen) );
       
       pe2[t]   <-  reward[s,t] - myValue2[t,choice2[s,t]];
       penc2[t] <- -reward[s,t] - myValue2[t,3-choice2[s,t]];
@@ -166,10 +169,11 @@ generated quantities {
 
       for (o in 1:4) {
         prob_sC2_gen[o]  <- beta_cdf(0.5, evidW[1,s]*cfoC2[s,t,o] + 1, evidW[2,s]*cfsC2[s,t,o] + 1 );
-        prob_oC2_gen[o]  <- 1 - prob_sC2_gen[o];
-        wProb_sC2_gen[o] <- wOthers[s,t,o] * prob_sC2_gen[o];
-        wProb_oC2_gen[o] <- wOthers[s,t,o] * prob_oC2_gen[o];
       }
+      prob_oC2_gen  <- 1 - prob_sC2_gen;
+      wProb_sC2_gen <- to_vector(wOthers[s,t]) .* prob_sC2_gen;
+      wProb_oC2_gen <- to_vector(wOthers[s,t]) .* prob_oC2_gen;
+
       otherValue2[t+1,choice2[s,t]]   <- sum( wProb_sC2_gen );
       otherValue2[t+1,3-choice2[s,t]] <- sum( wProb_oC2_gen );
     }  // trial loop

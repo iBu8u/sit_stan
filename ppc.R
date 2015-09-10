@@ -1,4 +1,4 @@
-ppc <- function(stanfit,  choice = NULL, sid = NULL, gid = NULL) {
+ppc <- function(stanfit,  choice = NULL, swch = FALSE, sid = NULL, gid = NULL) {
   
   ## ppc: posterior predictive check=====================================
   
@@ -9,6 +9,7 @@ ppc <- function(stanfit,  choice = NULL, sid = NULL, gid = NULL) {
   nt <- sz[1]; ns <- sz[3]
   choice1  <- array(0,dim = c(ns,nt)); choice2  <- array(0,dim = c(ns,nt)); reversal <- array(0,dim = c(ns,nt))
   choice1  <- t(mydata[,3,]);          choice2  <-  t(mydata[,10,]);        reversal <- t(mydata[,2,])
+  chswtch  <- array(0,dim = c(ns,nt)); chswtch  <- t(mydata[,5,])
   acc      <- array(0,dim = c(ns,nt))
   
   if ( is.null(choice) )  {
@@ -27,7 +28,12 @@ ppc <- function(stanfit,  choice = NULL, sid = NULL, gid = NULL) {
   #### calculate ppc accuracy --------------------------------------------
   for (s in 1:ns)   {
     for (t in 1:nt) {
-      acc[s,t] <- sum(c_rep[,s,t]==choice[s,t]) / niter
+      
+      if (swch == FALSE) {
+        acc[s,t] <- sum(c_rep[,s,t]==choice[s,t]) / niter
+      } else {
+        acc[s,t] <- sum(c_rep[,s,t]==chswtch[s,t]) / niter
+      }
     }
   }
   
@@ -74,7 +80,7 @@ ppc <- function(stanfit,  choice = NULL, sid = NULL, gid = NULL) {
     p2 = p2 + geom_vline(xintercept=which(grp$reversal[1:100]==1), colour="red", linetype="longdash")
     print(p2)
   }
-
+  
   return(list(acc=acc,acc_sub=acc_sub,acc_grd=acc_grd))
 }
 #### end of fucntion

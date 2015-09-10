@@ -1,10 +1,7 @@
-function [model] = RevLearn_RL_beta_alt2(params)
-
 %% prepare data and initilize parameters
 
 load('../_data/data3_129.mat')
 load('../_outputs/param_alt2_MAT.mat')
-
 
 lr    = params(:,1:2);
 evidW = params(:,3:4);
@@ -18,6 +15,7 @@ c2 = squeeze(data3(:,10,:))';
 r  = squeeze(data3(:,14,:))';
 
 otherC1   = zeros(ns,nt,4);
+otherC2   = zeros(ns,nt,4);
 wOthers   = zeros(ns,nt,4);
 cfsC2     = zeros(ns,nt,4);
 cfoC2     = zeros(ns,nt,4);
@@ -37,6 +35,7 @@ against = zeros(ns,nt);
 
 for s = 1:ns
     otherC1(s,:,:) = data3(:,6:9,s);
+    otherC2(s,:,:) = data3(:,55:58,s);
     wOthers(s,:,:) = data3(:,51:54,s);
     cfsC2(s,:,:)   = data3(:,61:64,s);
     cfoC2(s,:,:)   = data3(:,65:68,s);
@@ -78,6 +77,8 @@ for s = 1:ns
     end
 end
 
+%% calculate accuracy
+
 pOth_C2 = pOth_C2(:,1:99,:);
 pOth_C2_ori = pOth_C2_ori(:,1:99,:);
 otherC1 = otherC1(:,2:100,:);
@@ -93,8 +94,8 @@ for s = 1:ns
     
     for o= 1:4
         % acc(s,o) = sum(sum([a(:,o) b(:,o)],2)==2) / length(a);
-        acc1(s,o) = sum(a(:,o)==c(:,o)) / length(a);
-        acc2(s,o) = sum(b(:,o)==c(:,o)) / length(b);
+        acc1(s,o) = (sum(a(:,o)==c(:,o))) / length(a);
+        acc2(s,o) = (sum(b(:,o)==c(:,o))) / length(b);
         
     end
     
@@ -108,8 +109,14 @@ end
 
 
 
-%% output
-model.prob_sC2 = prob_sC2;
+%% plot
+figure
+hist(mean(acc1,2));
+hold on
+hist(mean(acc2,2));
+h = findobj(gca,'Type','patch');
+set(h(1),'Facecolor',[1 0 0],'EdgeColor','k');
+set(h(2),'Facecolor',[0 0 1],'EdgeColor','k');
 
 
 
