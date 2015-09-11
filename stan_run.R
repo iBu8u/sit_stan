@@ -1,4 +1,6 @@
 run_model <- function(modelStr, test = TRUE) {
+  
+  L <- list()
 
   library(rstan); library(parallel); library(loo)
   rstan_options(auto_write = TRUE)
@@ -42,14 +44,18 @@ run_model <- function(modelStr, test = TRUE) {
                 warmup  = nBurnin,
                 thin    = nThin,
                 init    = "random",
-                # seed    = 2135375,
+                #seed    = 1581381385, # for RLbeta_alt3_p2_v2
+                seed    = 295171225, # for RLbeta_alt2_v1
                 verbose = FALSE)
   
   cat("Finishing", modelStr, "model simulation ... \n")
   endTime = Sys.time(); print(endTime)  
   cat("It took",as.character.Date(endTime - startTime), "\n")
   
-  return(stanfit)
+  L$data <- dataList
+  L$fit  <- stanfit
+  
+  return(L)
 }  # function run_model()
 
 
@@ -297,6 +303,7 @@ create_pois <- function(model){
     pois <- c("lr_mu", "evidW_mu", "beta_mu",
               "lr_sd", "evidW_sd", "beta_sd",
               "lr", "evidW", "beta",
+              "c_rep",
               "log_likc1", "log_likc2", "lp__")
   } else if (model == "RevLearn_RLbeta_alt3_p1_v1" || model == "RevLearn_RLbeta_alt3_p1_v2") {
     pois <- c("lr_mu", "tau_mu", 
@@ -307,7 +314,7 @@ create_pois <- function(model){
     pois <- c("lr_mu", "beta_mu",
               "lr_sd", "beta_sd",
               "lr", "beta",
-              "c_rep",
+              #"c_rep",
               "log_likc1", "log_likc2", "lp__")
   }
   
