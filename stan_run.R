@@ -1,10 +1,8 @@
 run_model <- function(modelStr, test = TRUE) {
   
-  L <- list()
-
   library(rstan); library(parallel); library(loo)
-  rstan_options(auto_write = TRUE)
-  
+  L <- list()
+    
   #### prepare data #### ===========================================================================
   dataList <- prep_data(modelStr)
     
@@ -13,14 +11,15 @@ run_model <- function(modelStr, test = TRUE) {
   modelFile <- paste0("_scripts/",modelStr,".stan")
 
   # setup up Stan configuration
-  
   if (test == TRUE) {
+    rstan_options(auto_write = TRUE)
     options(mc.cores = 1)
     nSamples <- 8
     nChains  <- 1 
     nBurnin  <- 0
     nThin    <- 1
   } else {
+    rstan_options(auto_write = TRUE)
     options(mc.cores = 4)
     nSamples <- 2000
     nChains  <- 4 
@@ -34,8 +33,8 @@ run_model <- function(modelStr, test = TRUE) {
   #### run stan ####  ==============================================================================
   cat("Estimating", modelStr, "model... \n")
   startTime = Sys.time(); print(startTime)
-  
   cat("Calling", nChains, "simulations in Stan... \n")
+  
   stanfit <- stan(modelFile,
                 data    = dataList,
                 pars    = poi,
@@ -45,7 +44,7 @@ run_model <- function(modelStr, test = TRUE) {
                 thin    = nThin,
                 init    = "random",
                 #seed    = 1581381385, # for RLbeta_alt3_p2_v2
-                seed    = 295171225, # for RLbeta_alt2_v1
+                #seed    = 295171225, # for RLbeta_alt2_v1
                 verbose = FALSE)
   
   cat("Finishing", modelStr, "model simulation ... \n")
@@ -314,6 +313,7 @@ create_pois <- function(model){
     pois <- c("lr_mu", "beta_mu",
               "lr_sd", "beta_sd",
               "lr", "beta",
+              "lr_raw",
               #"c_rep",
               "log_likc1", "log_likc2", "lp__")
   }
