@@ -104,7 +104,7 @@ prep_data <- function(modelstr){
     dataList$bet1    <- bet1;    dataList$bet2    <- bet2
     dataList$with    <- with;    dataList$against <- against
     
-  } else if (modelstr == "RevLearn_RLbeta_alt1_c" || modelstr == "RevLearn_RLbeta_alt1_c_2lr" || modelstr == "RevLearn_RLbeta_alt1_bc" || 
+  } else if (modelstr == "RevLearn_RLbeta_alt1_c_1lr" || modelstr == "RevLearn_RLbeta_alt1_c_2lr" || modelstr == "RevLearn_RLbeta_alt1_bc" || 
              modelstr == "RevLearn_RLbeta_alt2_bc" || modelstr == "RevLearn_RLbeta_alt2_c_v1_2lr2evd" ||
              modelstr == "RevLearn_RLbeta_alt2_c_v1_1lr2evd" || modelstr == "RevLearn_RLbeta_alt2_c_v1_1lr1evd" ||
              modelstr == "RevLearn_RLbeta_alt2_c_v2_2lr" || modelstr == "RevLearn_RLbeta_alt2_c_v2_1lr" ||
@@ -290,7 +290,7 @@ create_pois <- function(model){
               "lr_sd", "thrs_sd", "beta_sd",
               "lr", "thrs", "beta",
               "log_likc1", "log_likc2", "log_likb1", "log_likb2", "lp__")
-  } else if (model == "RevLearn_RLbeta_alt1_c" || model == "RevLearn_RLbeta_alt1_c_2lr") {
+  } else if (model == "RevLearn_RLbeta_alt1_c_1lr" || model == "RevLearn_RLbeta_alt1_c_2lr") {
     pois <- c("lr_mu", "beta_mu",
               "lr_sd", "beta_sd",
               "lr", "beta",
@@ -317,8 +317,7 @@ create_pois <- function(model){
     pois <- c("lr_mu", "beta_mu",
               "lr_sd", "beta_sd",
               "lr", "beta",
-              "lr_raw",
-              #"c_rep",
+              "c_rep",
               "log_likc1", "log_likc2", "lp__")
   }
   

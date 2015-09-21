@@ -5,8 +5,8 @@ data {
   int<lower=1,upper=2> choice2[nSubjects,nTrials];         // 2nd choices, 1 or 2
   int<lower=0,upper=1> chswtch[nSubjects,nTrials];         // choice switch, 0 or 1
   real<lower=-1,upper=1> reward[nSubjects,nTrials];        // outcome, 1 or -1
-  real<lower=0,upper=4>  with[nSubjects,nTrials];          // No. of with
-  real<lower=0,upper=4>  against[nSubjects,nTrials];       // No. of against
+  real<lower=0,upper=1>  with[nSubjects,nTrials];          // No. of with
+  real<lower=0,upper=1>  against[nSubjects,nTrials];       // No. of against
   real<lower=-1.75,upper=1.75> wghtValue[nSubjects,nTrials,2];
 }
 
@@ -75,25 +75,24 @@ model {
     otherValue[1] <- initV;
 
     for (t in 1:nTrials) {
-      valfun1 <- beta[1][s]*myValue[t] + beta[2][s]*otherValue[t];
+      valfun1 <- beta[1,s]*myValue[t] + beta[2,s]*otherValue[t];
       choice1[s,t] ~ categorical_logit( valfun1 );
 
-      valdiff <- myValue[t][choice1[s,t]] - myValue[t][3-choice1[s,t]];
-      //valdiff <- fabs(myValue[t][choice1[s,t]] - myValue[t][3-choice1[s,t]]);
-      valfun2 <- beta[3][s] + beta[4][s]*valdiff + beta[5][s]*with[s,t] + beta[6][s]*against[s,t];
+      valdiff <- myValue[t,choice1[s,t]] - myValue[t,3-choice1[s,t]];
+      valfun2 <- beta[3,s] + beta[4,s]*valdiff + beta[5,s]*with[s,t] + beta[6,s]*against[s,t];
       chswtch[s,t] ~ bernoulli_logit(valfun2);
 
       // my prediction error
-      pe[t]   <-  reward[s,t] - myValue[t][choice2[s,t]];
-      penc[t] <- -reward[s,t] - myValue[t][3-choice2[s,t]];
+      pe[t]   <-  reward[s,t] - myValue[t,choice2[s,t]];
+      penc[t] <- -reward[s,t] - myValue[t,3-choice2[s,t]];
 
       // update my value
-      myValue[t+1][choice2[s,t]]   <- myValue[t][choice2[s,t]]   + lr[s] * pe[t];
-      myValue[t+1][3-choice2[s,t]] <- myValue[t][3-choice2[s,t]] + lr[s] * penc[t];
+      myValue[t+1,choice2[s,t]]   <- myValue[t,choice2[s,t]]   + lr[s] * pe[t];
+      myValue[t+1,3-choice2[s,t]] <- myValue[t,3-choice2[s,t]] + lr[s] * penc[t];
 
       // use weighted choice + outcome to update the others' value
-      otherValue[t+1][choice2[s,t]]   <- wghtValue[s,t,choice2[s,t]];
-      otherValue[t+1][3-choice2[s,t]] <- wghtValue[s,t,3-choice2[s,t]];
+      otherValue[t+1,choice2[s,t]]   <- wghtValue[s,t,choice2[s,t]];
+      otherValue[t+1,3-choice2[s,t]] <- wghtValue[s,t,3-choice2[s,t]];
 
     }  // trial loop
   }    // subject loop
@@ -111,6 +110,7 @@ generated quantities {
   real valdiff_gen;
   vector[2] valfun1_gen;
   real valfun2_gen;
+  int<lower=0,upper=1> c_rep[nSubjects, nTrials];
 
   lr_mu <- Phi_approx(lr_mu_pr);
 
@@ -121,23 +121,24 @@ generated quantities {
     log_likc2[s]   <- 0;
 
     for (t in 1:nTrials) {
-      valfun1_gen  <- beta[1][s]*myValue2[t] + beta[2][s]*otherValue2[t];
+      valfun1_gen  <- beta[1,s]*myValue2[t] + beta[2,s]*otherValue2[t];
       log_likc1[s] <- log_likc1[s] + categorical_logit_log(choice1[s,t], valfun1_gen);
 
-      valdiff_gen  <- myValue2[t][choice1[s,t]] - myValue2[t][3-choice1[s,t]];
-      //valdiff_gen  <- fabs(myValue2[t][choice1[s,t]] - myValue2[t][3-choice1[s,t]]);
-      
-      valfun2_gen  <- beta[3][s] + beta[4][s]*valdiff_gen + beta[5][s]*with[s,t] + beta[6][s]*against[s,t];
+      valdiff_gen  <- myValue2[t,choice1[s,t]] - myValue2[t,3-choice1[s,t]];
+     
+      valfun2_gen  <- beta[3,s] + beta[4,s]*valdiff_gen + beta[5,s]*with[s,t] + beta[6,s]*against[s,t];
       log_likc2[s] <- log_likc2[s] + bernoulli_logit_log(chswtch[s,t], valfun2_gen);
+      
+      c_rep[s,t]   <- bernoulli_rng( inv_logit(valfun2_gen) );
 
-      pe2[t]   <-  reward[s,t] - myValue2[t][choice2[s,t]];
-      penc2[t] <- -reward[s,t] - myValue2[t][3-choice2[s,t]];
+      pe2[t]   <-  reward[s,t] - myValue2[t,choice2[s,t]];
+      penc2[t] <- -reward[s,t] - myValue2[t,3-choice2[s,t]];
       
-      myValue2[t+1][choice2[s,t]]   <- myValue2[t][choice2[s,t]]   + lr[s] * pe2[t];
-      myValue2[t+1][3-choice2[s,t]] <- myValue2[t][3-choice2[s,t]] + lr[s] * penc2[t];
+      myValue2[t+1,choice2[s,t]]   <- myValue2[t,choice2[s,t]]   + lr[s] * pe2[t];
+      myValue2[t+1,3-choice2[s,t]] <- myValue2[t,3-choice2[s,t]] + lr[s] * penc2[t];
       
-      otherValue2[t+1][choice2[s,t]]   <- wghtValue[s,t,choice2[s,t]];
-      otherValue2[t+1][3-choice2[s,t]] <- wghtValue[s,t,3-choice2[s,t]];
+      otherValue2[t+1,choice2[s,t]]   <- wghtValue[s,t,choice2[s,t]];
+      otherValue2[t+1,3-choice2[s,t]] <- wghtValue[s,t,3-choice2[s,t]];
     }  // trial loop
   }    // subject loop
 }
