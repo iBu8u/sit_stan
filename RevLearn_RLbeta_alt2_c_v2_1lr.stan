@@ -5,11 +5,10 @@ data {
   int<lower=1,upper=2> choice2[nSubjects,nTrials];       // 2nd choices, 1 or 2
   int<lower=0,upper=1> chswtch[nSubjects,nTrials];       // choice switch, 0 or 1
   real<lower=-1,upper=1> reward[nSubjects,nTrials];      // outcome, 1 or -1
-  real<lower=0,upper=4> with[nSubjects,nTrials];         // No. of with
-  real<lower=0,upper=4> against[nSubjects,nTrials];      // No. of against
+  real<lower=0,upper=1> with[nSubjects,nTrials];         // No. of with
+  real<lower=0,upper=1> against[nSubjects,nTrials];      // No. of against
   real<lower=0,upper=1> wProb_sC2[nSubjects,nTrials,4];  // weighted prob based on preference' weight, same as my C2
   real<lower=0,upper=1> wProb_oC2[nSubjects,nTrials,4];  // weighted prob based on preference' weight, opposite to my C2
-
 }
 
 transformed data {
@@ -22,27 +21,25 @@ transformed data {
 
 parameters {
   // group-level parameters
-  vector[2] lr_mu_pr;
+  real lr_mu_pr;
   vector[B] beta_mu;
   
-  vector<lower=0>[2] lr_sd;
+  real<lower=0> lr_sd;
   vector<lower=0>[B] beta_sd;
   
   // subject-level raw parameters, follows norm(0,1), for later Matt Trick
-  vector[nSubjects] lr_raw[2];        // dim: [2 nSubjects]
+  vector[nSubjects] lr_raw;
   vector[nSubjects] beta_raw[B];      // dim: [B nSubjects]
 }
 
 transformed parameters {
   // subject-level parameters
-  vector<lower=0,upper=1>[nSubjects] lr[2];
+  vector<lower=0,upper=1>[nSubjects] lr;
   vector[nSubjects] beta[B];
   
   // Matt Trick, note that the input of Phi_approx must be 'real' rather than 'vector'
-  for (i in 1:2)           {
-    for (s in 1:nSubjects) {
-      lr[i,s]    <- Phi_approx( lr_mu_pr[i] + lr_sd[i] * lr_raw[i,s] );
-    }
+  for (s in 1:nSubjects) {
+    lr[s]    <- Phi_approx( lr_mu_pr + lr_sd * lr_raw[s] );
   }
   for (i in 1:B) {  // partial vectorization
     beta[i] <- beta_mu[i] + beta_sd[i] * beta_raw[i];
@@ -67,9 +64,7 @@ model {
   beta_sd  ~ cauchy(0,5);
   
   // Matt Trick
-  for (i in 1:2) {
-    lr_raw[i]    ~ normal(0,1);
-  }
+  lr_raw    ~ normal(0,1);
   for (i in 1:B) {
     beta_raw[i]  ~ normal(0,1);
   }
@@ -92,8 +87,8 @@ model {
       penc[t] <- -reward[s,t] - myValue[t,3-choice2[s,t]];
       
       // update my value
-      myValue[t+1,choice2[s,t]]   <- myValue[t,choice2[s,t]]   + lr[1,s] * pe[t];
-      myValue[t+1,3-choice2[s,t]] <- myValue[t,3-choice2[s,t]] + lr[2,s] * penc[t];
+      myValue[t+1,choice2[s,t]]   <- myValue[t,choice2[s,t]]   + lr[s] * pe[t];
+      myValue[t+1,3-choice2[s,t]] <- myValue[t,3-choice2[s,t]] + lr[s] * penc[t];
       
       // use choice preference from others to update the others' value
       otherValue[t+1,choice2[s,t]]   <- sum( wProb_sC2[s,t] );
@@ -104,7 +99,7 @@ model {
 }
 
 generated quantities {
-  real<lower=0,upper=1> lr_mu[2];
+  real<lower=0,upper=1> lr_mu;
   
   real log_likc1[nSubjects];
   real log_likc2[nSubjects];
@@ -117,10 +112,8 @@ generated quantities {
   real valfun2_gen;
   int<lower=0,upper=1> c_rep[nSubjects, nTrials];
   
-  for (i in 1:2) {
-    lr_mu[i]    <- Phi_approx(lr_mu_pr[i]);
-  }
-  
+  lr_mu  <- Phi_approx(lr_mu_pr);
+
   for (s in 1:nSubjects) {
     myValue2[1]    <- initV;
     otherValue2[1] <- initV;
@@ -139,8 +132,8 @@ generated quantities {
       
       pe2[t]   <-  reward[s,t] - myValue2[t,choice2[s,t]];
       penc2[t] <- -reward[s,t] - myValue2[t,3-choice2[s,t]];
-      myValue2[t+1,choice2[s,t]]   <- myValue2[t,choice2[s,t]]   + lr[1,s] * pe2[t];
-      myValue2[t+1,3-choice2[s,t]] <- myValue2[t,3-choice2[s,t]] + lr[2,s] * penc2[t];
+      myValue2[t+1,choice2[s,t]]   <- myValue2[t,choice2[s,t]]   + lr[s] * pe2[t];
+      myValue2[t+1,3-choice2[s,t]] <- myValue2[t,3-choice2[s,t]] + lr[s] * penc2[t];
 
       otherValue2[t+1,choice2[s,t]]   <- sum( wProb_sC2[s,t] );
       otherValue2[t+1,3-choice2[s,t]] <- sum( wProb_oC2[s,t] );

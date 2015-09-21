@@ -1,6 +1,9 @@
 ppc <- function(stanfit,  choice = NULL, swch = FALSE, sid = NULL, gid = NULL) {
-  
   ## ppc: posterior predictive check=====================================
+  # choice - 1(1st choice) or 2(2nd choice)
+  # swch   - T(2nd choice 0/1) or F(2nd choice 1/2)
+  # sid    - subject ID
+  # gid    - group ID
   
   #### data preparation and initialize -----------------------------------
   library(rstan); library(ggplot2); library(reshape2)

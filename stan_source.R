@@ -5,6 +5,8 @@ source("_scripts/get_mcmc.R")
 source("_scripts/cal_prob_v1.R")
 source("_scripts/cal_prob_v2.R")
 source("_scripts/ppc.R")
+source("_scripts/corr_b1b2.R")
+source("_scripts/extract_looic.R")
 #source("_scripts/DBDA2E-utilities.R")
 #library(shinyStan) # seems not possible to install on Kassandra
 library(rstan)

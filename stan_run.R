@@ -1,4 +1,4 @@
-run_model <- function(modelStr, test = TRUE) {
+run_model <- function(modelStr, test = TRUE, fitObj = NA) {
   
   library(rstan); library(parallel); library(loo)
   L <- list()
@@ -12,14 +12,12 @@ run_model <- function(modelStr, test = TRUE) {
 
   # setup up Stan configuration
   if (test == TRUE) {
-    rstan_options(auto_write = TRUE)
     options(mc.cores = 1)
     nSamples <- 8
     nChains  <- 1 
     nBurnin  <- 0
     nThin    <- 1
   } else {
-    rstan_options(auto_write = TRUE)
     options(mc.cores = 4)
     nSamples <- 2000
     nChains  <- 4 
@@ -34,8 +32,10 @@ run_model <- function(modelStr, test = TRUE) {
   cat("Estimating", modelStr, "model... \n")
   startTime = Sys.time(); print(startTime)
   cat("Calling", nChains, "simulations in Stan... \n")
+  rstan_options(auto_write = TRUE)
   
   stanfit <- stan(modelFile,
+                fit     = fitObj,
                 data    = dataList,
                 pars    = poi,
                 chains  = nChains,
@@ -43,8 +43,8 @@ run_model <- function(modelStr, test = TRUE) {
                 warmup  = nBurnin,
                 thin    = nThin,
                 init    = "random",
-                #seed    = 1581381385, # for RLbeta_alt3_p2_v2
-                #seed    = 295171225, # for RLbeta_alt2_v1
+                #seed    = 1581381385, # for RLbeta_alt3_p2_v2, LOOIV 8217
+                #seed    = 295171225, # for RLbeta_alt2_v1, LOOIC 8216
                 verbose = FALSE)
   
   cat("Finishing", modelStr, "model simulation ... \n")
@@ -105,7 +105,9 @@ prep_data <- function(modelstr){
     dataList$with    <- with;    dataList$against <- against
     
   } else if (modelstr == "RevLearn_RLbeta_alt1_c" || modelstr == "RevLearn_RLbeta_alt1_c_2lr" || modelstr == "RevLearn_RLbeta_alt1_bc" || 
-             modelstr == "RevLearn_RLbeta_alt2_c_v1" || modelstr == "RevLearn_RLbeta_alt2_c_v2" || modelstr == "RevLearn_RLbeta_alt2_bc" || 
+             modelstr == "RevLearn_RLbeta_alt2_bc" || modelstr == "RevLearn_RLbeta_alt2_c_v1_2lr2evd" ||
+             modelstr == "RevLearn_RLbeta_alt2_c_v1_1lr2evd" || modelstr == "RevLearn_RLbeta_alt2_c_v1_1lr1evd" ||
+             modelstr == "RevLearn_RLbeta_alt2_c_v2_2lr" || modelstr == "RevLearn_RLbeta_alt2_c_v2_1lr" ||
              modelstr == "RevLearn_RLbeta_alt3_p1_v1"|| modelstr == "RevLearn_RLbeta_alt3_p1_v2"|| 
              modelstr == "RevLearn_RLbeta_alt3_p2_v1"|| modelstr == "RevLearn_RLbeta_alt3_p2_v2") { 
     
@@ -151,7 +153,7 @@ prep_data <- function(modelstr){
     dataList$pref    <- pref;   dataList$wOthers <- wOthers
     dataList$cfsC2   <- cfsC2;  dataList$cfoC2   <- cfoC2;
     
-    if (modelstr == "RevLearn_RLbeta_alt2_c_v2") {
+    if (modelstr == "RevLearn_RLbeta_alt2_c_v2_2lr" || modelstr == "RevLearn_RLbeta_alt2_c_v2_1lr") {
       wProb_sC2 <- array(0,dim = c(ns,nt,4)) 
       wProb_oC2 <- array(0,dim = c(ns,nt,4))
       
@@ -298,7 +300,8 @@ create_pois <- function(model){
               "lr_sd", "thrs_sd", "evid_wght_sd", "beta_sd",
               "lr", "thrs", "evid_wght", "beta",
               "log_likc1", "log_likc2", "log_likb1", "log_likb2", "lp__")
-  } else if (model == "RevLearn_RLbeta_alt2_c_v1" ) {
+  } else if (model == "RevLearn_RLbeta_alt2_c_v1_2lr2evd" || model == "RevLearn_RLbeta_alt2_c_v1_1lr2evd" || 
+             model == "RevLearn_RLbeta_alt2_c_v1_1lr1evd") {
     pois <- c("lr_mu", "evidW_mu", "beta_mu",
               "lr_sd", "evidW_sd", "beta_sd",
               "lr", "evidW", "beta",
@@ -309,7 +312,8 @@ create_pois <- function(model){
               "lr_sd", "tau_sd",
               "lr", "tau", 
               "lp__")
-  } else if (model == "RevLearn_RLbeta_alt3_p2_v1" || model == "RevLearn_RLbeta_alt3_p2_v2" || model == "RevLearn_RLbeta_alt2_c_v2") {
+  } else if (model == "RevLearn_RLbeta_alt3_p2_v1" || model == "RevLearn_RLbeta_alt3_p2_v2" || 
+             model == "RevLearn_RLbeta_alt2_c_v2_2lr" || model == "RevLearn_RLbeta_alt2_c_v2_1lr") {
     pois <- c("lr_mu", "beta_mu",
               "lr_sd", "beta_sd",
               "lr", "beta",
