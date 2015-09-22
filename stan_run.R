@@ -294,6 +294,7 @@ create_pois <- function(model){
     pois <- c("lr_mu", "beta_mu",
               "lr_sd", "beta_sd",
               "lr", "beta",
+              "c_rep",
               "log_likc1", "log_likc2", "lp__")
   } else if (model == "RevLearn_RLbeta_alt2_bc") {
     pois <- c("lr_mu", "thrs_mu", "evid_wght_mu", "beta_mu",

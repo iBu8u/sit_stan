@@ -126,7 +126,7 @@ generated quantities {
   real valdiff_gen;
   vector[2] valfun1_gen;
   real valfun2_gen;
-  //int<lower=0,upper=1> c_rep[nSubjects, nTrials];
+  int<lower=0,upper=1> c_rep[nSubjects, nTrials];
   
   //for (i in 1:2) {
   //  lr_mu[i]    <- Phi_approx(lr_mu_pr[i]);    
@@ -147,7 +147,7 @@ generated quantities {
       valfun2_gen  <- beta[3,s] + beta[4,s]*valdiff_gen + beta[5,s]*with[s,t] + beta[6,s]*against[s,t];
       log_likc2[s] <- log_likc2[s] + bernoulli_logit_log(chswtch[s,t], valfun2_gen);
 
-      //c_rep[s,t]   <- bernoulli_rng( inv_logit(valfun2_gen) );
+      c_rep[s,t]   <- bernoulli_rng( inv_logit(valfun2_gen) );
       
       pe2[t]   <-  reward[s,t] - myValue2[t,choice2[s,t]];
       penc2[t] <- -reward[s,t] - myValue2[t,3-choice2[s,t]];

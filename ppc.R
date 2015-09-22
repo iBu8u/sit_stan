@@ -15,6 +15,12 @@ ppc <- function(stanfit,  choice = NULL, swch = FALSE, sid = NULL, gid = NULL) {
   chswtch  <- array(0,dim = c(ns,nt)); chswtch  <- t(mydata[,5,])
   acc      <- array(0,dim = c(ns,nt))
   
+  if ( class(stanfit)=='stanfit' ) {
+    stanfit <- stanfit
+  } else {
+    stanfit <- stanfit$fit
+  }
+  
   if ( is.null(choice) )  {
     c_rep  <- extract(stanfit, pars="c_rep", permuted=TRUE)$c_rep
     choice <- choice2 

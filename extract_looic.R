@@ -1,4 +1,11 @@
 extract_looic <- function(stanfit, choice=2) {
+  
+  if ( class(stanfit)=='stanfit' ) {
+    stanfit <- stanfit
+  } else {
+    stanfit <- stanfit$fit
+  }
+  
   if ( is.null(choice) )  {
     par_name <- "log_lik"
   } else if (choice == 1) {
