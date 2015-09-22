@@ -1,4 +1,5 @@
-barplot_beta <- function(stanfit) {
+beta_barplot <- function(stanfit) {
+  # beta_barplot() plots the BETAs' posterior group mean with a 95% HDI
   
   library(ggplot2)
   library(coda)
@@ -10,7 +11,6 @@ barplot_beta <- function(stanfit) {
   }
   
   #### get BETAs from Stanfit output -------------------------------------------------------------
-  ns <- 129
   parm   <- get_posterior_mean(stanfit, 'beta_mu')
   df <- data.frame(
     b_mean = as.matrix(parm[,5]),
