@@ -6,17 +6,21 @@ data {
 
 transformed data {
     int B;
-    B <- 7;
+    vector[3] M;
+    
+    B <- 2;
+    M <- c(1,2,3);
 }
 
 parameters {
     real beta_mu;
     real<lower=0> beta_sd;
     vector[B] beta_raw;
+    matrix[100,4] A[129];
 }
 
 transformed parameters {
-    vector[12] beta;
+    vector[2] beta;
     beta <- beta_mu + beta_sd * beta_raw;
 }
 
