@@ -1,5 +1,4 @@
 source("_scripts/stan_run.R")
-source("_scripts/waic.R")
 source("_scripts/compute_map.r")
 source("_scripts/get_mcmc.R")
 source("_scripts/cal_prob_v1.R")

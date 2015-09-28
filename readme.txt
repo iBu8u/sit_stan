@@ -34,4 +34,8 @@ RevLearn_
  - RLbeta_alt3_p2_v1: 1 lr for chosen and non-chosen choices, with c_rep 
  - RLbeta_alt3_p1_v2: step1, get lr and tau for the others, 4 lr and tau
  - RLbeta_alt3_p2_v2: 1 lr for chosen and non-chosen choices, without c_rep; essentially, this should be the same as _p2_v1
-  
+ 
+ - RLbeta_alt4: (preference) weighted sum of cumulative otherRewards to represent otherValue
+ 
+ - _w: weighted coherence, i.e. weight .* with, weight .* against
+ - _n: normalised other Value, i.e. othV(c2) / (othV(c2), othV(~c2))
