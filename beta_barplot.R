@@ -1,4 +1,4 @@
-beta_barplot <- function(stanfit) {
+beta_barplot <- function(stanfit, nb = 6) {
   # beta_barplot() plots the BETAs' posterior group mean with a 95% HDI
   
   library(ggplot2)
@@ -12,15 +12,21 @@ beta_barplot <- function(stanfit) {
   
   #### get BETAs from Stanfit output -------------------------------------------------------------
   parm   <- get_posterior_mean(stanfit, 'beta_mu')
-  df <- data.frame(
-    b_mean = as.matrix(parm[,5]),
-    b_name = c('beta 1','beta 2','beta 3','beta 4','beta 5','beta 6') )
+  if (nb == 6) {
+    df <- data.frame(
+      b_mean = as.matrix(parm[,5]),
+      b_name = c('beta 1','beta 2','beta 3','beta 4','beta 5','beta 6') )
+  } else if (nb == 8) {
+    df <- data.frame(
+      b_mean = as.matrix(parm[,5]),
+      b_name = c('beta1','beta2','beta3','beta4','beta5','beta6','beta7','beta8') )
+  }
   
   #### extract mcmc and calculate the 95% HDI -----------------------------------------------------
   mcmcCoda = mcmc.list( lapply( 1:ncol(stanfit) , function(x) {mcmc(as.array(stanfit)[,x,])}))
   
-  HDI <- array(0, c(6,2))
-  for (B in 1:6) {
+  HDI <- array(0, c(nb,2))
+  for (B in 1:nb) {
     HDI[B,] <- HDIofMCMC( mcmcCoda[, paste0("beta_mu[",B,"]") ] )
   }
   HDI_lb <- HDI[,1];    HDI_ub <- HDI[,2]
