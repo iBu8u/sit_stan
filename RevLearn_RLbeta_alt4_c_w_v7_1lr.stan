@@ -114,18 +114,18 @@ model {
       othW <- to_row_vector(otherWith2[s,t]); 
 
       if (t==1) {
-        otherValue[t+1,choice2[s,t]]   <- sum(wght .*othW .* otherReward2[s,t]);
-        otherValue[t+1,3-choice2[s,t]] <- sum(wght .*(1-othW) .* otherReward2[s,t]);
+        otherValue[t+1,choice2[s,t]]   <- sum( wght .* othW .* otherReward2[s,t] );
+        otherValue[t+1,3-choice2[s,t]] <- sum( wght .* (1-othW) .* otherReward2[s,t] );
       } else if (t==2) {
-        otherValue[t+1,choice2[s,t]]   <- sum(wght .* othW .* otherReward2[s,t]     + wght .* othW .* otherReward2[s,t-1]*disc[s]);
-        otherValue[t+1,3-choice2[s,t]] <- sum(wght .* (1-othW) .* otherReward2[s,t] + wght .* (1-othW) .* otherReward2[s,t-1]*disc[s]);
+        otherValue[t+1,choice2[s,t]]   <- sum( wght .* othW .* otherReward2[s,t]     + wght .* othW .* otherReward2[s,t-1]*disc[s] );
+        otherValue[t+1,3-choice2[s,t]] <- sum( wght .* (1-othW) .* otherReward2[s,t] + wght .* (1-othW) .* otherReward2[s,t-1]*disc[s] );
       } else if (t==3) {
-        otherValue[t+1,choice2[s,t]]   <- sum(wght .* othW .* otherReward2[s,t]     + wght .* othW .* otherReward2[s,t-1]*disc[s]     + wght .* othW .* otherReward2[s,t-2]*disc[s])^2;
-        otherValue[t+1,3-choice2[s,t]] <- sum(wght .* (1-othW) .* otherReward2[s,t] + wght .* (1-othW) .* otherReward2[s,t-1]*disc[s] + wght .* (1-othW) .* otherReward2[s,t-2]*disc[s]^2);
+        otherValue[t+1,choice2[s,t]]   <- sum( wght .* othW .* otherReward2[s,t]     + wght .* othW .* otherReward2[s,t-1]*disc[s]     + wght .* othW .* otherReward2[s,t-2]*disc[s]^2 );
+        otherValue[t+1,3-choice2[s,t]] <- sum( wght .* (1-othW) .* otherReward2[s,t] + wght .* (1-othW) .* otherReward2[s,t-1]*disc[s] + wght .* (1-othW) .* otherReward2[s,t-2]*disc[s]^2 );
       } else {
         disc_mat <- rep_matrix(exp(log(disc[s])*pwr),4);
-        otherValue[t+1,choice2[s,t]]   <- sum(disc_mat .* rep_matrix(wght,4) .* rep_matrix(othW,4)    .* block(otherReward2[s], t-3, 1, 4, 4) );
-        otherValue[t+1,3-choice2[s,t]] <- sum(disc_mat .* rep_matrix(wght,4) .* rep_matrix(1-othW,4)  .* block(otherReward2[s], t-3, 1, 4, 4) );
+        otherValue[t+1,choice2[s,t]]   <- sum( disc_mat .* rep_matrix(wght,4) .* rep_matrix(othW,4)    .* block(otherReward2[s], t-3, 1, 4, 4) );
+        otherValue[t+1,3-choice2[s,t]] <- sum( disc_mat .* rep_matrix(wght,4) .* rep_matrix(1-othW,4)  .* block(otherReward2[s], t-3, 1, 4, 4) );
       }
     }  // trial loop
   }    // subject loop
@@ -179,18 +179,18 @@ generated quantities {
       othW2 <- to_row_vector(otherWith2[s,t]); 
 
       if (t==1) {
-        otherValue2[t+1,choice2[s,t]]   <- sum(wght2 .*othW2 .* otherReward2[s,t]);
-        otherValue2[t+1,3-choice2[s,t]] <- sum(wght2 .*(1-othW2) .* otherReward2[s,t]);
+        otherValue2[t+1,choice2[s,t]]   <- sum( wght2 .* othW2 .* otherReward2[s,t] );
+        otherValue2[t+1,3-choice2[s,t]] <- sum( wght2 .* (1-othW2) .* otherReward2[s,t] );
       } else if (t==2) {
-        otherValue2[t+1,choice2[s,t]]   <- sum(wght2 .* othW2 .* otherReward2[s,t]     + wght2 .* othW2 .* otherReward2[s,t-1]*disc[s]);
-        otherValue2[t+1,3-choice2[s,t]] <- sum(wght2 .* (1-othW2) .* otherReward2[s,t] + wght2 .* (1-othW2) .* otherReward2[s,t-1]*disc[s]);
+        otherValue2[t+1,choice2[s,t]]   <- sum( wght2 .* othW2 .* otherReward2[s,t]     + wght2 .* othW2 .* otherReward2[s,t-1]*disc[s] );
+        otherValue2[t+1,3-choice2[s,t]] <- sum( wght2 .* (1-othW2) .* otherReward2[s,t] + wght2 .* (1-othW2) .* otherReward2[s,t-1]*disc[s] );
       } else if (t==3) {
-        otherValue2[t+1,choice2[s,t]]   <- sum(wght2 .* othW2 .* otherReward2[s,t]     + wght2 .* othW2 .* otherReward2[s,t-1]*disc[s]     + wght2 .* othW2 .* otherReward2[s,t-2]*disc[s])^2;
-        otherValue2[t+1,3-choice2[s,t]] <- sum(wght2 .* (1-othW2) .* otherReward2[s,t] + wght2 .* (1-othW2) .* otherReward2[s,t-1]*disc[s] + wght2 .* (1-othW2) .* otherReward2[s,t-2]*disc[s]^2);
+        otherValue2[t+1,choice2[s,t]]   <- sum( wght2 .* othW2 .* otherReward2[s,t]     + wght2 .* othW2 .* otherReward2[s,t-1]*disc[s]     + wght2 .* othW2 .* otherReward2[s,t-2]*disc[s]^2 );
+        otherValue2[t+1,3-choice2[s,t]] <- sum( wght2 .* (1-othW2) .* otherReward2[s,t] + wght2 .* (1-othW2) .* otherReward2[s,t-1]*disc[s] + wght2 .* (1-othW2) .* otherReward2[s,t-2]*disc[s]^2 );
       } else {
         disc_mat2 <- rep_matrix(exp(log(disc[s])*pwr),4);
-        otherValue2[t+1,choice2[s,t]]   <- sum(disc_mat2 .* rep_matrix(wght2,4) .* rep_matrix(othW2,4)    .* block(otherReward2[s], t-3, 1, 4, 4) );
-        otherValue2[t+1,3-choice2[s,t]] <- sum(disc_mat2 .* rep_matrix(wght2,4) .* rep_matrix(1-othW2,4)  .* block(otherReward2[s], t-3, 1, 4, 4) );
+        otherValue2[t+1,choice2[s,t]]   <- sum( disc_mat2 .* rep_matrix(wght2,4) .* rep_matrix(othW2,4)    .* block(otherReward2[s], t-3, 1, 4, 4) );
+        otherValue2[t+1,3-choice2[s,t]] <- sum( disc_mat2 .* rep_matrix(wght2,4) .* rep_matrix(1-othW2,4)  .* block(otherReward2[s], t-3, 1, 4, 4) );
       }
     }  // trial loop
   }    // subject loop

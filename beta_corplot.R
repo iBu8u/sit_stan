@@ -1,4 +1,4 @@
-beta_corplot <- function(stanfit, splt = NULL, nb = 6) {
+beta_corplot <- function( stanfit, splt = NULL ) {
   # beta_corplot() plots the correlation matrix of individuals' BETAs
   
   library(corrplot)
@@ -12,11 +12,8 @@ beta_corplot <- function(stanfit, splt = NULL, nb = 6) {
   ns <- 129
   parm <- get_posterior_mean(stanfit, 'beta')
   bMat <- matrix(parm[,5], nrow = ns)
-  if (nb == 6) {
-    colnames(bMat) <- c('beta1','beta2','beta3','beta4','beta5','beta6')
-  } else if (nb == 8) {
-    colnames(bMat) <- c('beta1','beta2','beta3','beta4','beta5','beta6','beta7','beta8')
-  }
+  nb   <- dim(bMat)[2]
+  colnames(bMat) <- paste('beta', 1:nb)
   
   if (is.null(splt) ) {
     corrMat <- cor(bMat)

@@ -108,15 +108,15 @@ model {
       // use weighted discounted outcome to update the others' value
 
       if (t==1) {
-        otherValue[t+1,choice2[s,t]]   <- sum(wOthers[s,t] .* otherWith2[s,t] .* otherReward2[s,t]);
-        otherValue[t+1,3-choice2[s,t]] <- sum(wOthers[s,t] .* (1-otherWith2[s,t]) .* otherReward2[s,t]);
+        otherValue[t+1,choice2[s,t]]   <- sum( wOthers[s,t] .* otherWith2[s,t] .* otherReward2[s,t] );
+        otherValue[t+1,3-choice2[s,t]] <- sum( wOthers[s,t] .* (1-otherWith2[s,t]) .* otherReward2[s,t] );
       } else if (t==2) {
-        otherValue[t+1,choice2[s,t]]   <- sum(wOthers[s,t] .* otherWith2[s,t] .* otherReward2[s,t]     + wOthers[s,t-1] .* otherWith2[s,t-1] .* otherReward2[s,t-1]*disc[s]);
-        otherValue[t+1,3-choice2[s,t]] <- sum(wOthers[s,t] .* (1-otherWith2[s,t]) .* otherReward2[s,t] + wOthers[s,t-1] .* (1-otherWith2[s,t-1]) .* otherReward2[s,t-1]*disc[s]);
+        otherValue[t+1,choice2[s,t]]   <- sum( wOthers[s,t] .* otherWith2[s,t] .* otherReward2[s,t]     + wOthers[s,t-1] .* otherWith2[s,t-1] .* otherReward2[s,t-1]*disc[s] );
+        otherValue[t+1,3-choice2[s,t]] <- sum( wOthers[s,t] .* (1-otherWith2[s,t]) .* otherReward2[s,t] + wOthers[s,t-1] .* (1-otherWith2[s,t-1]) .* otherReward2[s,t-1]*disc[s] );
       } else {
         disc_mat <- rep_matrix(exp(log(disc[s])*pwr),4);
-        otherValue[t+1,choice2[s,t]]   <- sum(disc_mat .* block(wOthers[s], t-2, 1, 3, 4) .* block(otherWith2[s], t-2, 1, 3, 4)  .* block(otherReward2[s], t-2, 1, 3, 4) );
-        otherValue[t+1,3-choice2[s,t]] <- sum(disc_mat .* block(wOthers[s], t-2, 1, 3, 4) .* (1-block(otherWith2[s], t-2, 1, 3, 4))  .* block(otherReward2[s], t-2, 1, 3, 4) );
+        otherValue[t+1,choice2[s,t]]   <- sum( disc_mat .* block(wOthers[s], t-2, 1, 3, 4) .* block(otherWith2[s], t-2, 1, 3, 4)  .* block(otherReward2[s], t-2, 1, 3, 4) );
+        otherValue[t+1,3-choice2[s,t]] <- sum( disc_mat .* block(wOthers[s], t-2, 1, 3, 4) .* (1-block(otherWith2[s], t-2, 1, 3, 4))  .* block(otherReward2[s], t-2, 1, 3, 4) );
       }
     }  // trial loop
   }    // subject loop
@@ -165,15 +165,15 @@ generated quantities {
       myValue2[t+1,3-choice2[s,t]] <- myValue2[t,3-choice2[s,t]] + lr[s] * penc2[t];
 
       if (t==1) {
-        otherValue2[t+1,choice2[s,t]]   <- sum(wOthers[s,t] .* otherWith2[s,t] .* otherReward2[s,t]);
-        otherValue2[t+1,3-choice2[s,t]] <- sum(wOthers[s,t] .* (1-otherWith2[s,t]) .* otherReward2[s,t]);
+        otherValue2[t+1,choice2[s,t]]   <- sum( wOthers[s,t] .* otherWith2[s,t] .* otherReward2[s,t] );
+        otherValue2[t+1,3-choice2[s,t]] <- sum( wOthers[s,t] .* (1-otherWith2[s,t]) .* otherReward2[s,t] );
       } else if (t==2) {
-        otherValue2[t+1,choice2[s,t]]   <- sum(wOthers[s,t] .* otherWith2[s,t] .* otherReward2[s,t]     + wOthers[s,t-1] .* otherWith2[s,t-1] .* otherReward2[s,t-1]*disc[s]);
-        otherValue2[t+1,3-choice2[s,t]] <- sum(wOthers[s,t] .* (1-otherWith2[s,t]) .* otherReward2[s,t] + wOthers[s,t-1] .* (1-otherWith2[s,t-1]) .* otherReward2[s,t-1]*disc[s]);
+        otherValue2[t+1,choice2[s,t]]   <- sum( wOthers[s,t] .* otherWith2[s,t] .* otherReward2[s,t]     + wOthers[s,t-1] .* otherWith2[s,t-1] .* otherReward2[s,t-1]*disc[s] );
+        otherValue2[t+1,3-choice2[s,t]] <- sum( wOthers[s,t] .* (1-otherWith2[s,t]) .* otherReward2[s,t] + wOthers[s,t-1] .* (1-otherWith2[s,t-1]) .* otherReward2[s,t-1]*disc[s] );
       } else {
         disc_mat2 <- rep_matrix(exp(log(disc[s])*pwr),4);
-        otherValue2[t+1,choice2[s,t]]   <- sum(disc_mat2 .* block(wOthers[s], t-2, 1, 3, 4) .* block(otherWith2[s], t-2, 1, 3, 4)  .* block(otherReward2[s], t-2, 1, 3, 4) );
-        otherValue2[t+1,3-choice2[s,t]] <- sum(disc_mat2 .* block(wOthers[s], t-2, 1, 3, 4) .* (1-block(otherWith2[s], t-2, 1, 3, 4))  .* block(otherReward2[s], t-2, 1, 3, 4) );
+        otherValue2[t+1,choice2[s,t]]   <- sum( disc_mat2 .* block(wOthers[s], t-2, 1, 3, 4) .* block(otherWith2[s], t-2, 1, 3, 4)  .* block(otherReward2[s], t-2, 1, 3, 4) );
+        otherValue2[t+1,3-choice2[s,t]] <- sum( disc_mat2 .* block(wOthers[s], t-2, 1, 3, 4) .* (1-block(otherWith2[s], t-2, 1, 3, 4))  .* block(otherReward2[s], t-2, 1, 3, 4) );
       }  
     }  // trial loop
   }    // subject loop

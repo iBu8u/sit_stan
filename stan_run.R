@@ -77,13 +77,7 @@ prep_data <- function(modelstr){
   dataList$choice2 <- choice2
   dataList$reward  <- reward
   
-  if (modelstr == "RevLearn_RLcoh" || modelstr == "RevLearn_RLcoh_cfa" || 
-      modelstr == "RevLearn_RLcoh_2lr" || modelstr == "RevLearn_RLcoh_2lr_cfa" ||
-      modelstr == "RevLearn_RLcoh_modvalue" || modelstr == "RevLearn_RLcoh_modprob_tempin" || 
-      modelstr == "RevLearn_RLcoh_modprob_tempout" || modelstr == "RevLearn_RLcoh_2lr2t_modvalue" ||
-      modelstr == "RevLearn_RLcoh_2lr2t_modprob_tempin" || modelstr == "RevLearn_RLcoh_2lr2t_modprob_tempout" ||
-      modelstr == "RevLearn_RLcoh_2lr2t_modprob_tempin_bern" ||
-      modelstr == "RevLearn_RLcoh_2lr_bet") {
+  if ( substr(modelstr,1,14) == "RevLearn_RLcoh" ) {
     
     chswtch <- array(0,dim = c(ns,nt))
     bet1    <- array(0,dim = c(ns,nt)); bet2    <- array(0,dim = c(ns,nt))
@@ -164,13 +158,19 @@ prep_data <- function(modelstr){
     if ( substr(modelstr,1,20) == 'RevLearn_RLbeta_alt2' ) {
       wProb_sC2 <- array(0,dim = c(ns,nt,4)) 
       wProb_oC2 <- array(0,dim = c(ns,nt,4))
+      wProb_sC2_med <- array(0,dim = c(ns,nt,4)) 
+      wProb_oC2_med <- array(0,dim = c(ns,nt,4))
       
       for (s in 1:ns) {
         wProb_sC2[s,,] <- mydata[,81:84,s]
         wProb_oC2[s,,] <- mydata[,85:88,s]
+        wProb_sC2_med[s,,] <- mydata[,109:112,s]
+        wProb_oC2_med[s,,] <- mydata[,113:116,s]
       }
       dataList$wProb_sC2 <- wProb_sC2
       dataList$wProb_oC2 <- wProb_oC2
+      dataList$wProb_sC2_med <- wProb_sC2_med
+      dataList$wProb_oC2_med <- wProb_oC2_med
       
     } else if (modelstr == "RevLearn_RLbeta_alt3_p2_v1") {
       L <- cal_prob_v1(dataList)
@@ -193,8 +193,7 @@ prep_data <- function(modelstr){
     } 
     
     
-  } else if (modelstr == "RevLearn_RLcumrew" || modelstr == "RevLearn_RLcumrew_cfa" || 
-             modelstr == "RevLearn_RLcumrew_2lr" || modelstr == "RevLearn_RLcumrew_2lr_cfa" ) {
+  } else if ( substr(modelstr,1,17) == "RevLearn_RLcumrew" ) {
     
     otherChoice1 <- array(0,dim = c(ns,nt,4))
     otherReward  <- array(0,dim = c(ns,nt,4))
