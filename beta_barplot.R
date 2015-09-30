@@ -1,5 +1,5 @@
 beta_barplot <- function(stanfit) {
-  # beta_barplot() plots the BETAs' posterior group mean with a 95% HDI
+# beta_barplot() plots the BETAs' posterior group mean with a 95% HDI
   
   library(ggplot2)
   library(coda)
