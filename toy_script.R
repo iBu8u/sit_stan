@@ -7,7 +7,13 @@ L$x <- x
 L$y <- y
 
 library(rstan)
-stanfit <- stan("_scripts/toy_model.stan",data= L, chains = 1,iter = 5, init = "random",verbose = FALSE)
+stanfit <- stan("_scripts/toy_model.stan",
+                data    = L, 
+                chains  = 1,
+                iter    = 5, 
+                control = list(adapt_delta=0.85),
+                init    = "random",
+                verbose = FALSE)
 
 
 

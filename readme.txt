@@ -36,6 +36,20 @@ RevLearn_
  - RLbeta_alt3_p2_v2: 1 lr for chosen and non-chosen choices, without c_rep; essentially, this should be the same as _p2_v1
  
  - RLbeta_alt4: (preference) weighted sum of cumulative otherRewards to represent otherValue
+ - RevLearn_RLbeta_alt4_c_w_v1_1lr: only uses current preference weights and current with/against
+ - RevLearn_RLbeta_alt4_c_w_v2_1lr: preference weight sum up to one --> [3 2 1 1]/7
+ - RevLearn_RLbeta_alt4_c_w_v3_1lr: v3_without weight on otherValue when update
+ - RevLearn_RLbeta_alt4_c_w_v4_1lr: use actual weight and with/against
+ - RevLearn_RLbeta_alt4_c_w_v5_1lr: beta1-4 separately model myValue and otherValue (chosen vs. non-chosen)
+ - RevLearn_RLbeta_alt4_c_w_v6_1lr: actual weight but only current with/against
+ - RevLearn_RLbeta_alt4_c_w_v7_1lr: based on v1, windows size = 4
+ - RevLearn_RLbeta_alt4_c_w_v8_1lr: same beta for myV, separate beta for otherV
+ - RevLearn_RLbeta_alt4_c_w_v9_1lr: based on v1, windows size = 5
+ - RevLearn_RLbeta_alt4_c_w_v10_1lr: based on v1, adding a cfa parameter
+ 
  
  - _w: weighted coherence, i.e. weight .* with, weight .* against
  - _n: normalised other Value, i.e. othV(c2) / (othV(c2), othV(~c2))
+ 
+ 
+ 

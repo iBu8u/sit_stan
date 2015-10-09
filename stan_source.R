@@ -9,8 +9,9 @@ source("_scripts/extract_looic.R")
 source("_scripts/beta_barplot.R")
 source("_scripts/beta_corplot.R")
 #source("_scripts/DBDA2E-utilities.R")
-#library(shinyStan) # seems not possible to install on Kassandra
+
 library(rstan)
+library(shinystan)
 library(loo)
 library(R.matlab)
 

@@ -28,15 +28,18 @@ parameters {
   // group-level parameters
   real lr_mu_pr;
   real disc_mu_pr; 
+  real cfa_mu_pr;
   vector[B] beta_mu;
 
   real<lower=0> lr_sd;
   real<lower=0> disc_sd;
+  real<lower=0> cfa_sd;
   vector<lower=0>[B] beta_sd;
   
   // subject-level raw parameters, follows norm(0,1), for later Matt Trick
   vector[nSubjects] lr_raw;        // dim: [2, nSubjects]
   vector[nSubjects] disc_raw;
+  vector[nSubjects] cfa_raw;
   vector[nSubjects] beta_raw[B];   // dim: [B, nSubjects]
 }
 
@@ -44,12 +47,14 @@ transformed parameters {
   // subject-level parameters
   vector<lower=0,upper=1>[nSubjects] lr;
   vector<lower=0,upper=1+1e-10>[nSubjects] disc;
+  vector<lower=0,upper=1>[nSubjects]  cfa;
   vector[nSubjects] beta[B];
   
   // Matt Trick, note that the input of Phi_approx must be 'real' rather than 'vector'
   for (s in 1:nSubjects) {
     lr[s]   <- Phi_approx( lr_mu_pr + lr_sd * lr_raw[s] );
     disc[s] <- Phi_approx( disc_mu_pr + disc_sd * disc_raw[s] ) + machine_precision();
+    cfa[s]  <- Phi_approx( cfa_mu_pr + cfa_sd * cfa_raw[s] );
   }
   for (i in 1:B) {
     beta[i] <- beta_mu[i] + beta_sd[i] * beta_raw[i];
@@ -71,14 +76,17 @@ model {
   // hyperparameters
   lr_mu_pr   ~ normal(0,1);
   disc_mu_pr ~ normal(0,1);
+  cfa_mu_pr  ~ normal(0,1);
   beta_mu    ~ normal(0,1);
   
   lr_sd   ~ cauchy(0,5);
   disc_sd ~ cauchy(0,5);
+  cfa_sd  ~ cauchy(0,5);
   beta_sd ~ cauchy(0,5);
   
   // Matt Trick
   lr_raw   ~ normal(0,1);
+  cfa_raw  ~ normal(0,1);
   disc_raw ~ normal(0,1);
   
   for (i in 1:B) {
@@ -100,8 +108,8 @@ model {
 
       // my prediction error
       pe[t]   <-  reward[s,t] - myValue[t,choice2[s,t]];
-      penc[t] <- -reward[s,t] - myValue[t,3-choice2[s,t]];
-
+      penc[t] <- (-reward[s,t] * cfa[s]) - myValue[t,3-choice2[s,t]];
+      
       // update my value
       myValue[t+1,choice2[s,t]]   <- myValue[t,choice2[s,t]]   + lr[s] * pe[t];
       myValue[t+1,3-choice2[s,t]] <- myValue[t,3-choice2[s,t]] + lr[s] * penc[t];
@@ -111,12 +119,12 @@ model {
 
       if (t==1) {
         otherValue[t+1,choice2[s,t]]   <- sum( wOthers[s,t] .* othW .* otherReward2[s,t] );
-        otherValue[t+1,3-choice2[s,t]] <- sum( wOthers[s,t] .* (1-othW) .* otherReward2[s,t] );
+        otherValue[t+1,3-choice2[s,t]] <- sum(wOthers[s,t] .* (1-othW) .* otherReward2[s,t] );
       } else if (t==2) {
         otherValue[t+1,choice2[s,t]]   <- sum( wOthers[s,t] .* othW .* otherReward2[s,t]     + wOthers[s,t-1] .* othW .* otherReward2[s,t-1]*disc[s] );
         otherValue[t+1,3-choice2[s,t]] <- sum( wOthers[s,t] .* (1-othW) .* otherReward2[s,t] + wOthers[s,t-1] .* (1-othW) .* otherReward2[s,t-1]*disc[s] );
       } else {
-        disc_mat <- rep_matrix(exp(log(disc[s])*pwr),4); // replicate by 4 columns 
+        disc_mat <- rep_matrix(exp(log(disc[s])*pwr),4);
         otherValue[t+1,choice2[s,t]]   <- sum( disc_mat .* block(wOthers[s], t-2, 1, 3, 4) .* rep_matrix(othW,3)   .* block(otherReward2[s], t-2, 1, 3, 4) );
         otherValue[t+1,3-choice2[s,t]] <- sum( disc_mat .* block(wOthers[s], t-2, 1, 3, 4) .* rep_matrix(1-othW,3) .* block(otherReward2[s], t-2, 1, 3, 4) );
       }
@@ -141,8 +149,8 @@ generated quantities {
   row_vector[4] othW2;
   int<lower=0,upper=1> c_rep[nSubjects, nTrials];
 
-  lr_mu   <- Phi_approx(lr_mu_pr);
-  disc_mu <- Phi_approx(disc_mu_pr) + machine_precision();
+  lr_mu <- Phi_approx(lr_mu_pr);
+  disc_mu <- Phi_approx(disc_mu_pr)+machine_precision();
 
   for (s in 1:nSubjects) {
     myValue2[1]    <- initV;
@@ -162,7 +170,7 @@ generated quantities {
       c_rep[s,t]   <- bernoulli_rng( inv_logit(valfun2_gen) );
 
       pe2[t]   <-  reward[s,t] - myValue2[t,choice2[s,t]];
-      penc2[t] <- -reward[s,t] - myValue2[t,3-choice2[s,t]];
+      penc2[t] <- (-reward[s,t] * cfa[s]) - myValue2[t,3-choice2[s,t]];
       
       myValue2[t+1,choice2[s,t]]   <- myValue2[t,choice2[s,t]]   + lr[s] * pe2[t];
       myValue2[t+1,3-choice2[s,t]] <- myValue2[t,3-choice2[s,t]] + lr[s] * penc2[t];

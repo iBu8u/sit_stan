@@ -6,10 +6,8 @@ data {
 
 transformed data {
     int B;
-    vector[3] M;
-    
+
     B <- 2;
-    M <- c(1,2,3);
 }
 
 parameters {
