@@ -1,4 +1,4 @@
-run_model <- function(modelStr, test = TRUE, fitObj = NA) {
+run_model <- function(modelStr, test = TRUE, fitObj = NA, adapt = 0.8) {
   
   library(rstan); library(parallel); library(loo)
   L <- list()
@@ -46,6 +46,8 @@ run_model <- function(modelStr, test = TRUE, fitObj = NA) {
                 #seed    = 1581381385, # for RLbeta_alt3_p2_v2, LOOIV 8217
                 #seed    = 295171225, # for RLbeta_alt2_v1, LOOIC 8216
                 seed     = 1450154626, # for alt4_
+                #seed     = 1136699103, # alt4_, seems even lower looic
+                control = list(adapt_delta = adapt),
                 verbose = FALSE)
   
   cat("Finishing", modelStr, "model simulation ... \n")
@@ -172,7 +174,7 @@ prep_data <- function(modelstr){
       dataList$wProb_sC2_med <- wProb_sC2_med
       dataList$wProb_oC2_med <- wProb_oC2_med
       
-    } else if (modelstr == "RevLearn_RLbeta_alt3_p2_v1") {
+    } else if (modelstr == "RevLearn_RLbeta_alt3_p2_v1" || modelstr == "RevLearn_RLbeta_alt3_p2_v1_w") {
       L <- cal_prob_v1(dataList)
       dataList$wProb_sC2 <- L$wProb_sC2
       dataList$wProb_oC2 <- L$wProb_oC2
@@ -309,7 +311,7 @@ create_pois <- function(model){
               "lr", "thrs", "beta",
               "log_likc1", "log_likc2", "log_likb1", "log_likb2", "lp__")
   } else if ( substr(model,1,22) == 'RevLearn_RLbeta_alt1_c' || substr(model,1,25) == 'RevLearn_RLbeta_alt2_c_v2' || 
-              model == "RevLearn_RLbeta_alt3_p2_v1" || model == "RevLearn_RLbeta_alt3_p2_v2" ) {
+              substr(model,1,23) == 'RevLearn_RLbeta_alt3_p2' ) {
     pois <- c("lr_mu", "beta_mu",
               "lr_sd", "beta_sd",
               "lr", "beta",
@@ -331,6 +333,12 @@ create_pois <- function(model){
               "lr_sd", "tau_sd",
               "lr", "tau", 
               "lp__")
+  } else if ( model == 'RevLearn_RLbeta_alt4_c_w_v10_1lr' ) {
+    pois <- c("lr_mu", "beta_mu", "disc_mu", "cfa_mu",
+              "lr_sd", "beta_sd", "disc_sd", "cfa_sd",
+              "lr", "beta", "disc", "cfa",
+              "c_rep",
+              "log_likc1", "log_likc2", "lp__")
   } else if ( substr(model,1,20) == 'RevLearn_RLbeta_alt4' ) {
     pois <- c("lr_mu", "beta_mu", "disc_mu",
               "lr_sd", "beta_sd", "disc_sd",

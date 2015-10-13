@@ -30,6 +30,8 @@ beta_barplot <- function(stanfit) {
   df <- df[c('b_name','b_mean','HDI_ub','HDI_lb')]
 
   #### plot #### ---------------------------------------------------------------------------------
+  theme_set(theme_bw(base_size = 18))
+  
   g <- ggplot(df, aes(x = b_name, y = b_mean))
   dodge  <- position_dodge(width=0.9)
   limits <- aes(ymax = HDI_ub, ymin = HDI_lb)
@@ -38,6 +40,7 @@ beta_barplot <- function(stanfit) {
   g <- g + geom_errorbar(limits, position=dodge, width=0.25, 
                          size = 1, colour = "deepskyblue4")
   g <- g + geom_hline(yintercept=0)
+  g <- g + ylab("beta values") + xlab("")
   print(g)
   
   return(df)

@@ -53,12 +53,18 @@ ppc <- function(stanfit,  choice = NULL, swch = FALSE, sid = NULL, gid = NULL) {
   
   ## plot per subject, plus the reversal point -------------------------------------------
   if (!is.null(sid)) {
-    theme_set(theme_gray(base_size = 18))
+    theme_set(theme_bw(base_size = 18))
+     
     accuracy = acc[sid,]
     trial = 1:nt
-    p = qplot(trial, accuracy, geom ='line')
-    p = p + geom_vline(xintercept=which(reversal[sid,]==1), colour="red", linetype="longdash")
+    df <-  data.frame(trial = trial, accuracy=accuracy)
+    p  <- ggplot(df, aes(x = trial, y = accuracy))
+    p  <- p + geom_line(size = 1.2, color = "dodgerblue4") + ylim(0.25,1)
+    p  <- p + geom_vline(xintercept=which(reversal[sid,]==1), colour="red", 
+                           linetype="longdash")
+    
     print(p)
+    
   }
   
   ## plot for total (grand mean) ----- not too much sence...

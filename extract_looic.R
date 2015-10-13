@@ -1,4 +1,4 @@
-extract_looic <- function(stanfit, choice=2) {
+extract_looic <- function(stanfit, choice=2, core=4) {
   
   if ( class(stanfit)=='stanfit' ) {
     stanfit <- stanfit
@@ -15,7 +15,7 @@ extract_looic <- function(stanfit, choice=2) {
   }
   
   lik    <- extract_log_lik(stanfit, parameter_name = par_name)
-  looic  <- loo(lik, cores = 4)
+  looic  <- loo(lik, cores = core)
   
   return(looic)
 }
