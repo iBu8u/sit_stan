@@ -35,10 +35,16 @@ beta_barplot <- function(stanfit) {
   g <- ggplot(df, aes(x = b_name, y = b_mean))
   dodge  <- position_dodge(width=0.9)
   limits <- aes(ymax = HDI_ub, ymin = HDI_lb)
-  g <- g + geom_bar(position=dodge, stat="identity", width = .8,
-                    fill = "deepskyblue2", colour = "black")
-  g <- g + geom_errorbar(limits, position=dodge, width=0.25, 
-                         size = 1, colour = "deepskyblue4")
+#   g <- g + geom_bar(position=dodge, stat="identity", width = .8,
+#                     fill = "deepskyblue2", colour = "black")
+#   g <- g + geom_errorbar(limits, position=dodge, width=0.25, 
+#                          size = 1, colour = "deepskyblue4")
+  
+  g <- g + geom_bar(position=dodge, stat="identity", width = .8,  
+      fill = c("#D55E00","#56B4E9","#999999","#999999","#009E73","#009E73"))
+  g <- g + geom_errorbar(limits, position=dodge, width=0.25, size = 1,
+      colour = c("#D55E00","#56B4E9","#999999","#999999","#009E73","#009E73"))
+                         
   g <- g + geom_hline(yintercept=0)
   g <- g + ylab("beta values") + xlab("")
   print(g)

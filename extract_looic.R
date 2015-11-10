@@ -1,4 +1,5 @@
 extract_looic <- function(stanfit, choice=2, core=4) {
+  # extract LOOIC, from mcmc object
   
   if ( class(stanfit)=='stanfit' ) {
     stanfit <- stanfit

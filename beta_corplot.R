@@ -16,6 +16,14 @@ beta_corplot <- function( stanfit, splt = NULL ) {
   nb   <- dim(bMat)[2]
   colnames(bMat) <- paste('beta', 1:nb)
   
+  ### get all the parameters ----------------------
+#   parm <- get_posterior_mean(stanfit, c('lr', 'disc', 'beta'))
+#   parMat <- matrix(parm[,5], nrow = ns)  
+#   colnames(parMat) <- c('lr', 'disc',paste('beta', 1:6))
+#   writeMat('_outputs/param_beta4_alt6.mat', parMat = parMat)
+
+
+  ------------------------------------------------------------------------  
   if (is.null(splt) ) {
     corrMat <- cor(bMat)
     corrplot(corrMat, method = 'square', diag = FALSE, addCoef.col = T)

@@ -22,4 +22,7 @@ plotPost(mcmcCoda[,"lr_mu"], main = "lr_mu", xlab = bquote(lr_mu),
 # points() can be used for ploting the true parameter for simulated data
 
 
+plotPost(mcmcCoda[,"beta_mu[6]"], main = "beta_mu[6]", xlab = bquote(beta_mu[6]),
+         cenTend = "mean", credMass = 0.95, showCurve = F,
+         col = "skyblue")
 

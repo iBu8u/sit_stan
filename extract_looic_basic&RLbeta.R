@@ -1,18 +1,18 @@
 fit_RL    <- readRDS("_outputs/fit_RL.RData")
 loo_RL    <- extract_looic(fit_RL,NULL)$looic
-rm(fit_RL)
+#rm(fit_RL)
 
 fit_RLnc  <- readRDS("_outputs/fit_RLnc.RData")
 loo_RLnc  <- extract_looic(fit_RLnc,NULL)$looic
-rm(fit_RLnc)
+#rm(fit_RLnc)
 
 fit_RLcoh <- readRDS("_outputs/fit_RLcoh.RData")
 loo_RLcoh <- extract_looic(fit_RLcoh,NULL)$looic
-rm(fit_RLcoh)
+#rm(fit_RLcoh)
 
 fit_RLcr  <- readRDS("_outputs/fit_RLcumrew.RData")
 loo_RLcr <- extract_looic(fit_RLcr,NULL)$looic
-rm(fit_RLcr)
+# rm(fit_RLcr)
 
 fit_RLbeta_a1 <- readRDS("_outputs/fit_RLbeta_alt1_c_w_080.RData")
 loo_RLbeta_a1 <- extract_looic(fit_RLbeta_a1,core=1)$looic
