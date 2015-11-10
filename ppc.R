@@ -59,7 +59,7 @@ ppc <- function(stanfit,  choice = NULL, swch = FALSE, sid = NULL, gid = NULL) {
     trial = 1:nt
     df <-  data.frame(trial = trial, accuracy=accuracy)
     p  <- ggplot(df, aes(x = trial, y = accuracy))
-    p  <- p + geom_line(size = 1.2, color = "dodgerblue4") + ylim(0.25,1)
+    p  <- p + geom_line(size = 1.2, color = "dodgerblue4") + ylim(0,1)
     p  <- p + geom_vline(xintercept=which(reversal[sid,]==1), colour="red", 
                            linetype="longdash")
     

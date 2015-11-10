@@ -1,7 +1,7 @@
 source("_scripts/DBDA2E-utilities.R")
 library(coda)
 
-mcmcCoda = mcmc.list( lapply( 1:ncol(out1) , function(x) {mcmc(as.array(out1)[,x,])}))
+mcmcCoda = mcmc.list( lapply( 1:ncol(out) , function(x) {mcmc(as.array(out)[,x,])}))
 
 fileNameRoot = "some_file_name"
 graphFileType = "eps"
