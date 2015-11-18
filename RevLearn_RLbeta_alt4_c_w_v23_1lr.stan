@@ -29,15 +29,18 @@ parameters {
   real lr_mu_pr;
   real disc_mu_pr; 
   vector[B] beta_mu;
+  vector[2] tau_mu_pr;
 
   real<lower=0> lr_sd;
   real<lower=0> disc_sd;
   vector<lower=0>[B] beta_sd;
+  vector<lower=0>[2] tau_sd;
   
   // subject-level raw parameters, follows norm(0,1), for later Matt Trick
   vector[nSubjects] lr_raw;        // dim: [1, nSubjects]
   vector[nSubjects] disc_raw;
   vector[nSubjects] beta_raw[B];   // dim: [B, nSubjects]
+  vector[nSubjects] tau_raw[2];
 }
 
 transformed parameters {
@@ -45,11 +48,15 @@ transformed parameters {
   vector<lower=0,upper=1>[nSubjects] lr;
   vector<lower=0,upper=1+1e-10>[nSubjects] disc;
   vector[nSubjects] beta[B];
+  vector<lower=0,upper=3>[nSubjects] tau[2];
   
   // Matt Trick, note that the input of Phi_approx must be 'real' rather than 'vector'
   for (s in 1:nSubjects) {
     lr[s]   <- Phi_approx( lr_mu_pr + lr_sd * lr_raw[s] );
     disc[s] <- Phi_approx( disc_mu_pr + disc_sd * disc_raw[s] ) + machine_precision();
+    for (i in 1:2) {
+      tau[i,s]    <- Phi_approx( tau_mu_pr[i] + tau_sd[i] * tau_raw[i,s] ) * 3;
+    }
   }
   for (i in 1:B) {
     beta[i] <- beta_mu[i] + beta_sd[i] * beta_raw[i];
@@ -72,10 +79,12 @@ model {
   lr_mu_pr   ~ normal(0,1);
   disc_mu_pr ~ normal(0,1);
   beta_mu    ~ normal(0,1);
+  tau_mu_pr   ~ normal(0,1);
   
   lr_sd   ~ cauchy(0,5);
   disc_sd ~ cauchy(0,5);
   beta_sd ~ cauchy(0,5);
+  tau_sd   ~ cauchy(0,5);
   
   // Matt Trick
   lr_raw   ~ normal(0,1);
@@ -84,6 +93,10 @@ model {
   for (i in 1:B) {
     beta_raw[i] ~ normal(0,1);
   } 
+
+  for (i in 1:2) {
+    tau_raw[i]   ~ normal(0,1);
+  }
   
   // subject loop and trial loop
   for (s in 1:nSubjects) {
@@ -92,12 +105,12 @@ model {
 
     for (t in 1:nTrials) {
       valfun1 <- beta[1,s]*myValue[t] + beta[2,s]*otherValue[t];
-      choice1[s,t] ~ categorical_logit( valfun1 );
+      choice1[s,t] ~ categorical_logit( tau[1,s] * valfun1 );
 
       valdiff <- myValue[t,choice1[s,t]] - myValue[t,3-choice1[s,t]];
       valfun2 <- beta[3,s] + beta[4,s]*valdiff + beta[5,s]*wgtWith[s,t] + beta[6,s]*wgtAgst[s,t];
 
-      chswtch[s,t] ~ bernoulli_logit(valfun2);
+      chswtch[s,t] ~ bernoulli_logit( tau[2,s] * valfun2);
 
       // my prediction error
       pe[t]   <-  reward[s,t] - myValue[t,choice2[s,t]];
@@ -128,6 +141,7 @@ model {
 generated quantities {
   real<lower=0,upper=1> lr_mu;
   real<lower=0,upper=1+1e-10> disc_mu; 
+  real<lower=0,upper=3> tau_mu[2];
   
   real log_likc1[nSubjects]; 
   real log_likc2[nSubjects]; 
@@ -144,6 +158,9 @@ generated quantities {
 
   lr_mu   <- Phi_approx(lr_mu_pr);
   disc_mu <- Phi_approx(disc_mu_pr) + machine_precision();
+  for (i in 1:2) {
+    tau_mu[i]  <- Phi_approx(tau_mu_pr[i]) * 3;
+  }
 
   for (s in 1:nSubjects) {
     myValue2[1]    <- initV;
@@ -153,14 +170,14 @@ generated quantities {
 
     for (t in 1:nTrials) {
       valfun1_gen  <- beta[1,s]*myValue2[t] + beta[2,s]*otherValue2[t];
-      log_likc1[s] <- log_likc1[s] + categorical_logit_log(choice1[s,t], valfun1_gen);
+      log_likc1[s] <- log_likc1[s] + categorical_logit_log(choice1[s,t], tau[1,s] * valfun1_gen);
 
       valdiff_gen  <- myValue2[t,choice1[s,t]] - myValue2[t,3-choice1[s,t]];
       valfun2_gen  <- beta[3,s] + beta[4,s]*valdiff_gen + beta[5,s]*wgtWith[s,t] + beta[6,s]*wgtAgst[s,t];
 
-      log_likc2[s] <- log_likc2[s] + bernoulli_logit_log(chswtch[s,t], valfun2_gen);
+      log_likc2[s] <- log_likc2[s] + bernoulli_logit_log(chswtch[s,t], tau[2,s] * valfun2_gen);
       
-      c_rep[s,t]   <- bernoulli_rng( inv_logit(valfun2_gen) );
+      c_rep[s,t]   <- bernoulli_rng( inv_logit(tau[2,s] * valfun2_gen) );
 
       pe2[t]   <-  reward[s,t] - myValue2[t,choice2[s,t]];
       penc2[t] <- -reward[s,t] - myValue2[t,3-choice2[s,t]];

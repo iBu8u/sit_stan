@@ -1,6 +1,6 @@
-ppc <- function(stanfit,  choice = NULL, swch = FALSE, sid = NULL, gid = NULL) {
+ppc <- function(stanfit,  type = NULL, swch = FALSE, sid = NULL, gid = NULL) {
   ## ppc: posterior predictive check=====================================
-  # choice - 1(1st choice) or 2(2nd choice)
+  # type   - NULL(default), 1(1st choice) or 2(2nd choice)
   # swch   - T(2nd choice 0/1) or F(2nd choice 1/2)
   # sid    - subject ID
   # gid    - group ID
@@ -11,7 +11,7 @@ ppc <- function(stanfit,  choice = NULL, swch = FALSE, sid = NULL, gid = NULL) {
   sz <- dim(mydata)
   nt <- sz[1]; ns <- sz[3]
   choice1  <- array(0,dim = c(ns,nt)); choice2  <- array(0,dim = c(ns,nt)); reversal <- array(0,dim = c(ns,nt))
-  choice1  <- t(mydata[,3,]);          choice2  <-  t(mydata[,10,]);        reversal <- t(mydata[,2,])
+  choice1  <- t(mydata[,3,]);          choice2  <- t(mydata[,10,]);         reversal <- t(mydata[,2,])
   chswtch  <- array(0,dim = c(ns,nt)); chswtch  <- t(mydata[,5,])
   acc      <- array(0,dim = c(ns,nt))
   
@@ -21,13 +21,13 @@ ppc <- function(stanfit,  choice = NULL, swch = FALSE, sid = NULL, gid = NULL) {
     stanfit <- stanfit$fit
   }
   
-  if ( is.null(choice) )  {
+  if ( is.null(type) )  {
     c_rep  <- extract(stanfit, pars="c_rep", permuted=TRUE)$c_rep
     choice <- choice2 
-  } else if (choice == 1) {
+  } else if (type == 1) {
     c_rep  <- extract(stanfit, pars="c_rep1", permuted=TRUE)$c_rep1
     choice <- choice1
-  } else if (choice == 2) {
+  } else if (type == 2) {
     c_rep  <- extract(stanfit, pars="c_rep2", permuted=TRUE)$c_rep2
     choice <- choice2
   }

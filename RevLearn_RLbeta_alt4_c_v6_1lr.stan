@@ -5,8 +5,8 @@ data {
   int<lower=1,upper=2> choice2[nSubjects,nTrials];         // 2nd choices, 1 or 2
   int<lower=0,upper=1> chswtch[nSubjects,nTrials];         // choice switch, 0 or 1
   real<lower=-1,upper=1> reward[nSubjects,nTrials];        // outcome, 1 or -1
-  real<lower=0,upper=1>  wgtWith[nSubjects,nTrials];       
-  real<lower=0,upper=1>  wgtAgst[nSubjects,nTrials];   
+  real<lower=0,upper=1>  with[nSubjects,nTrials];       
+  real<lower=0,upper=1>  against[nSubjects,nTrials];   
   matrix<lower=0,upper=1>[nTrials,4]  otherReward2[nSubjects]; // dim: [ns, t, 4]
   matrix<lower=0,upper=1>[nTrials,4]  otherWith2[nSubjects];
   matrix<lower=0.25,upper=1>[nTrials,4]  wOthers[nSubjects]; 
@@ -95,8 +95,7 @@ model {
       choice1[s,t] ~ categorical_logit( valfun1 );
 
       valdiff <- myValue[t,choice1[s,t]] - myValue[t,3-choice1[s,t]];
-      valfun2 <- beta[3,s] + beta[4,s]*valdiff + beta[5,s]*wgtWith[s,t] + beta[6,s]*wgtAgst[s,t];
-
+      valfun2 <- beta[3,s] + beta[4,s]*valdiff + beta[5,s]*with[s,t] + beta[6,s]*against[s,t];
       chswtch[s,t] ~ bernoulli_logit(valfun2);
 
       // my prediction error
@@ -156,8 +155,8 @@ generated quantities {
       log_likc1[s] <- log_likc1[s] + categorical_logit_log(choice1[s,t], valfun1_gen);
 
       valdiff_gen  <- myValue2[t,choice1[s,t]] - myValue2[t,3-choice1[s,t]];
-      valfun2_gen  <- beta[3,s] + beta[4,s]*valdiff_gen + beta[5,s]*wgtWith[s,t] + beta[6,s]*wgtAgst[s,t];
-
+     
+      valfun2_gen  <- beta[3,s] + beta[4,s]*valdiff_gen + beta[5,s]*with[s,t] + beta[6,s]*against[s,t];
       log_likc2[s] <- log_likc2[s] + bernoulli_logit_log(chswtch[s,t], valfun2_gen);
       
       c_rep[s,t]   <- bernoulli_rng( inv_logit(valfun2_gen) );

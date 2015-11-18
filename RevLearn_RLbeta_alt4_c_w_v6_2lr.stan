@@ -26,30 +26,32 @@ transformed data {
 
 parameters {
   // group-level parameters
-  real lr_mu_pr;
+  vector[2] lr_mu_pr;
   real disc_mu_pr; 
   vector[B] beta_mu;
 
-  real<lower=0> lr_sd;
+  vector<lower=0>[2] lr_sd;
   real<lower=0> disc_sd;
   vector<lower=0>[B] beta_sd;
   
   // subject-level raw parameters, follows norm(0,1), for later Matt Trick
-  vector[nSubjects] lr_raw;        // dim: [1, nSubjects]
+  vector[nSubjects] lr_raw[2];        // dim: [2, nSubjects]
   vector[nSubjects] disc_raw;
   vector[nSubjects] beta_raw[B];   // dim: [B, nSubjects]
 }
 
 transformed parameters {
   // subject-level parameters
-  vector<lower=0,upper=1>[nSubjects] lr;
+  vector<lower=0,upper=1>[nSubjects] lr[2];
   vector<lower=0,upper=1+1e-10>[nSubjects] disc;
   vector[nSubjects] beta[B];
   
   // Matt Trick, note that the input of Phi_approx must be 'real' rather than 'vector'
   for (s in 1:nSubjects) {
-    lr[s]   <- Phi_approx( lr_mu_pr + lr_sd * lr_raw[s] );
     disc[s] <- Phi_approx( disc_mu_pr + disc_sd * disc_raw[s] ) + machine_precision();
+    for (i in 1:2) {
+      lr[i,s]    <- Phi_approx( lr_mu_pr[i] + lr_sd[i] * lr_raw[i,s] );
+    }
   }
   for (i in 1:B) {
     beta[i] <- beta_mu[i] + beta_sd[i] * beta_raw[i];
@@ -78,7 +80,9 @@ model {
   beta_sd ~ cauchy(0,5);
   
   // Matt Trick
-  lr_raw   ~ normal(0,1);
+  for (i in 1:2) {
+    lr_raw[i]   ~ normal(0,1);
+  }
   disc_raw ~ normal(0,1);
   
   for (i in 1:B) {
@@ -96,7 +100,6 @@ model {
 
       valdiff <- myValue[t,choice1[s,t]] - myValue[t,3-choice1[s,t]];
       valfun2 <- beta[3,s] + beta[4,s]*valdiff + beta[5,s]*wgtWith[s,t] + beta[6,s]*wgtAgst[s,t];
-
       chswtch[s,t] ~ bernoulli_logit(valfun2);
 
       // my prediction error
@@ -104,8 +107,8 @@ model {
       penc[t] <- -reward[s,t] - myValue[t,3-choice2[s,t]];
 
       // update my value
-      myValue[t+1,choice2[s,t]]   <- myValue[t,choice2[s,t]]   + lr[s] * pe[t];
-      myValue[t+1,3-choice2[s,t]] <- myValue[t,3-choice2[s,t]] + lr[s] * penc[t];
+      myValue[t+1,choice2[s,t]]   <- myValue[t,choice2[s,t]]   + lr[1,s] * pe[t];
+      myValue[t+1,3-choice2[s,t]] <- myValue[t,3-choice2[s,t]] + lr[2,s] * penc[t];
 
       // use weighted discounted outcome to update the others' value
       othW <- otherWith2[s,t]; 
@@ -126,7 +129,7 @@ model {
 }
 
 generated quantities {
-  real<lower=0,upper=1> lr_mu;
+  real<lower=0,upper=1> lr_mu[2];
   real<lower=0,upper=1+1e-10> disc_mu; 
   
   real log_likc1[nSubjects]; 
@@ -142,7 +145,9 @@ generated quantities {
   row_vector[4] othW2;
   int<lower=0,upper=1> c_rep[nSubjects, nTrials];
 
-  lr_mu   <- Phi_approx(lr_mu_pr);
+  for (i in 1:2) {
+    lr_mu[i]  <- Phi_approx(lr_mu_pr[i]);
+  }
   disc_mu <- Phi_approx(disc_mu_pr) + machine_precision();
 
   for (s in 1:nSubjects) {
@@ -156,8 +161,8 @@ generated quantities {
       log_likc1[s] <- log_likc1[s] + categorical_logit_log(choice1[s,t], valfun1_gen);
 
       valdiff_gen  <- myValue2[t,choice1[s,t]] - myValue2[t,3-choice1[s,t]];
+     
       valfun2_gen  <- beta[3,s] + beta[4,s]*valdiff_gen + beta[5,s]*wgtWith[s,t] + beta[6,s]*wgtAgst[s,t];
-
       log_likc2[s] <- log_likc2[s] + bernoulli_logit_log(chswtch[s,t], valfun2_gen);
       
       c_rep[s,t]   <- bernoulli_rng( inv_logit(valfun2_gen) );
@@ -165,8 +170,8 @@ generated quantities {
       pe2[t]   <-  reward[s,t] - myValue2[t,choice2[s,t]];
       penc2[t] <- -reward[s,t] - myValue2[t,3-choice2[s,t]];
       
-      myValue2[t+1,choice2[s,t]]   <- myValue2[t,choice2[s,t]]   + lr[s] * pe2[t];
-      myValue2[t+1,3-choice2[s,t]] <- myValue2[t,3-choice2[s,t]] + lr[s] * penc2[t];
+      myValue2[t+1,choice2[s,t]]   <- myValue2[t,choice2[s,t]]   + lr[1,s] * pe2[t];
+      myValue2[t+1,3-choice2[s,t]] <- myValue2[t,3-choice2[s,t]] + lr[2,s] * penc2[t];
 
       othW2 <- otherWith2[s,t]; 
 

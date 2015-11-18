@@ -67,6 +67,7 @@ model {
   real valfun2;
   matrix[3,4] disc_mat;
   row_vector[4] othW;
+  row_vector[4] otherReward_vec;
   
   // hyperparameters
   lr_mu_pr   ~ normal(0,1);
@@ -111,16 +112,18 @@ model {
       othW <- otherWith2[s,t]; 
 
       if (t==1) {
-        otherValue[t+1,choice2[s,t]]   <- sum( wOthers[s,t] .* othW .* otherReward2[s,t] );
-        otherValue[t+1,3-choice2[s,t]] <- sum( wOthers[s,t] .* (1-othW) .* otherReward2[s,t] );
+        otherReward_vec  <- wOthers[s,t] .* otherReward2[s,t];
       } else if (t==2) {
-        otherValue[t+1,choice2[s,t]]   <- sum( wOthers[s,t] .* othW .* otherReward2[s,t]     + wOthers[s,t-1] .* othW .* otherReward2[s,t-1]*disc[s] );
-        otherValue[t+1,3-choice2[s,t]] <- sum( wOthers[s,t] .* (1-othW) .* otherReward2[s,t] + wOthers[s,t-1] .* (1-othW) .* otherReward2[s,t-1]*disc[s] );
+        otherReward_vec  <- wOthers[s,t] .* otherReward2[s,t] + wOthers[s,t-1] .* otherReward2[s,t-1] * disc[s];
       } else {
         disc_mat <- rep_matrix(exp(log(disc[s])*pwr),4); // replicate by 4 columns 
-        otherValue[t+1,choice2[s,t]]   <- sum( disc_mat .* block(wOthers[s], t-2, 1, 3, 4) .* rep_matrix(othW,3)   .* block(otherReward2[s], t-2, 1, 3, 4) );
-        otherValue[t+1,3-choice2[s,t]] <- sum( disc_mat .* block(wOthers[s], t-2, 1, 3, 4) .* rep_matrix(1-othW,3) .* block(otherReward2[s], t-2, 1, 3, 4) );
+        otherReward_vec  <- rep_row_vector(1.0, 3) * (disc_mat .* block(wOthers[s], t-2, 1, 3, 4) .* block(otherReward2[s], t-2, 1, 3, 4));
       }
+
+      otherValue[t+1,choice2[s,t]]   <- sum( othW     .* otherReward_vec );
+      otherValue[t+1,3-choice2[s,t]] <- sum( (1-othW) .* otherReward_vec );
+      otherValue[t+1] <- 1 ./ ( 1 + exp(-otherValue[t+1]) );
+
     }  // trial loop
   }    // subject loop
 }
@@ -140,6 +143,7 @@ generated quantities {
   real valfun2_gen;
   matrix[3,4] disc_mat2;
   row_vector[4] othW2;
+  row_vector[4] otherReward_vec2;
   int<lower=0,upper=1> c_rep[nSubjects, nTrials];
 
   lr_mu   <- Phi_approx(lr_mu_pr);
@@ -171,16 +175,18 @@ generated quantities {
       othW2 <- otherWith2[s,t]; 
 
       if (t==1) {
-        otherValue2[t+1,choice2[s,t]]   <- sum( wOthers[s,t] .* othW2 .* otherReward2[s,t] );
-        otherValue2[t+1,3-choice2[s,t]] <- sum( wOthers[s,t] .* (1-othW2) .* otherReward2[s,t] );
+        otherReward_vec2  <- wOthers[s,t] .* otherReward2[s,t];
       } else if (t==2) {
-        otherValue2[t+1,choice2[s,t]]   <- sum( wOthers[s,t] .* othW2 .* otherReward2[s,t]     + wOthers[s,t-1] .* othW2 .* otherReward2[s,t-1]*disc[s] );
-        otherValue2[t+1,3-choice2[s,t]] <- sum( wOthers[s,t] .* (1-othW2) .* otherReward2[s,t] + wOthers[s,t-1] .* (1-othW2) .* otherReward2[s,t-1]*disc[s] );
+        otherReward_vec2  <- wOthers[s,t] .* otherReward2[s,t] + wOthers[s,t-1] .* otherReward2[s,t-1] * disc[s];
       } else {
-        disc_mat2 <- rep_matrix(exp(log(disc[s])*pwr),4);
-        otherValue2[t+1,choice2[s,t]]   <- sum( disc_mat2 .* block(wOthers[s], t-2, 1, 3, 4) .* rep_matrix(othW2,3)   .* block(otherReward2[s], t-2, 1, 3, 4) );
-        otherValue2[t+1,3-choice2[s,t]] <- sum( disc_mat2 .* block(wOthers[s], t-2, 1, 3, 4) .* rep_matrix(1-othW2,3) .* block(otherReward2[s], t-2, 1, 3, 4) );
+        disc_mat2 <- rep_matrix(exp(log(disc[s])*pwr),4); // replicate by 4 columns 
+        otherReward_vec2  <- rep_row_vector(1.0, 3) * (disc_mat2 .* block(wOthers[s], t-2, 1, 3, 4) .* block(otherReward2[s], t-2, 1, 3, 4));
       }
+
+      otherValue2[t+1,choice2[s,t]]   <- sum( othW2     .* otherReward_vec2 );
+      otherValue2[t+1,3-choice2[s,t]] <- sum( (1-othW2 ) .* otherReward_vec2 );
+      otherValue2[t+1] <- 1 ./ ( 1 + exp(-otherValue2[t+1]) );
+      
     }  // trial loop
   }    // subject loop
 }

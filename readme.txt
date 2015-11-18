@@ -42,10 +42,33 @@ RevLearn_
  - RevLearn_RLbeta_alt4_c_w_v4_1lr: use actual weight and with/against
  - RevLearn_RLbeta_alt4_c_w_v5_1lr: beta1-4 separately model myValue and otherValue (chosen vs. non-chosen)
  - RevLearn_RLbeta_alt4_c_w_v6_1lr: actual weight but only current with/against
+ - RevLearn_RLbeta_alt4_c_v6_1lr  : use actual with/against, rather than weighted with/against 
+ - RevLearn_RLbeta_alt4_c_w_v6_2lr: actual weight but only current with/against, 2 learning rate
  - RevLearn_RLbeta_alt4_c_w_v7_1lr: based on v1, windows size = 4
  - RevLearn_RLbeta_alt4_c_w_v8_1lr: same beta for myV, separate beta for otherV
  - RevLearn_RLbeta_alt4_c_w_v9_1lr: based on v1, windows size = 5
  - RevLearn_RLbeta_alt4_c_w_v10_1lr: based on v1, adding a cfa parameter
+
+ - RevLearn_RLbeta_alt4_c_w_v11_1lr: based on v6, normalize the discounted cumulative reward (cr), before using for update otherValue (divided by sum)
+ - RevLearn_RLbeta_alt4_c_w_v12_1lr: based on v6, use [-1 1] as the discounted reward, rather than [0 1], normalized cr with SOFTMAX (sumup to one)
+ - RevLearn_RLbeta_alt4_c_w_v13_1lr: based on v6, valdiff = valfun1(c1) - valfun(~c1), instead of valdiff = myValue(c1) - myValue(~c1)
+ - RevLearn_RLbeta_alt4_c_w_v14_1lr: based on v6, normalize the discounted cumulative reward, 2 * SOFTMAX - 1, --> [-1 1]
+ - RevLearn_RLbeta_alt4_c_w_v15_1lr_ind: based on v6, fit the model non-hierarchically, (individual fitting)
+ - RevLearn_RLbeta_alt4_c_w_v16_1lr: based on v6, valdiff = bet * ( V(c1) - V(~c1) )
+ - RevLearn_RLbeta_alt4_c_w_v17_1lr: based on v6, use 2 beta for Valdiff (+ and -) --> beta4 * (vdiff >=0) * vdiff + beta5 * (vdiff<0) * vdiff
+ - RevLearn_RLbeta_alt4_c_w_v18_1lr: based on v6, use inv_logit for normalizing cr
+ - RevLearn_RLbeta_alt4_c_w_v19_1lr: based on v6, use inv_logit for normalizing otherValue, not otherCR
+ - RevLearn_RLbeta_alt4_c_w_v20_1lr: based on v6, separate beta for general bias: when nWigh >= nAgst, and when aWith < nAgst
+ - RevLearn_RLbeta_alt4_c_w_v21_1lr: based on v12 & v20, separate beta for general bias, using [-1 1] for cr
+ - RevLearn_RLbeta_alt4_c_w_v22_1lr: based on v6, using other's accuracy as the weight for updating otherValue
+ - RevLearn_RLbeta_alt4_c_w_v23_1lr: based on v6, adding two temperatures for categorical_logit() and for bernoulli_logit()
+
+ 
+ - RLbeta_alt5: (preference) weighted sum of cumulative otherRewards to represent otherValue, bind beta5 and beta6 together
+ - RevLearn_RLbeta_alt5_c_w_v1_1lr: no 'general bias', run: vfun2 <- beta3*vDiff + beta4*(wgtWigh - wgtAgst)
+ - RevLearn_RLbeta_alt5_c_w_v3_1lr: with 'general bias', run: vfun2 <- beta3 + beta4*vDiff + beta5*(wgtWigh - wgtAgst)
+ 
+ 
  
  
  - _w: weighted coherence, i.e. weight .* with, weight .* against

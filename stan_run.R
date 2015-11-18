@@ -19,10 +19,10 @@ run_model <- function(modelStr, test = TRUE, fitObj = NA, adapt = 0.8) {
     nThin    <- 1
   } else {
     options(mc.cores = 4)
-    nSamples <- 2000
+    nSamples <- 2000#2000
     nChains  <- 4 
     nBurnin  <- floor(nSamples/2)
-    nThin    <- 1
+    nThin    <- 1#1
   }
   
   # parameter of interest (this could save both memory and space)
@@ -102,7 +102,8 @@ prep_data <- function(modelstr){
     dataList$with    <- with;    dataList$against <- against
     
   } else if ( substr(modelstr,1,20) == 'RevLearn_RLbeta_alt1' || substr(modelstr,1,20) == 'RevLearn_RLbeta_alt2' || 
-              substr(modelstr,1,20) == 'RevLearn_RLbeta_alt3' || substr(modelstr,1,20) == 'RevLearn_RLbeta_alt4') { 
+              substr(modelstr,1,20) == 'RevLearn_RLbeta_alt3' || substr(modelstr,1,20) == 'RevLearn_RLbeta_alt4' ||
+              substr(modelstr,1,20) == 'RevLearn_RLbeta_alt5') { 
     
     chswtch <- array(0,dim = c(ns,nt))
     bet1    <- array(0,dim = c(ns,nt)); bet2    <- array(0,dim = c(ns,nt))
@@ -119,6 +120,7 @@ prep_data <- function(modelstr){
     cfoC2        <- array(0,dim = c(ns,nt,4)) # cumulative-window frequency, opposite to my C2
     wgtWith      <- array(0,dim = c(ns,nt)); wgtWith_one <- array(0,dim = c(ns,nt))
     wgtAgst      <- array(0,dim = c(ns,nt)); wgtAgst_one <- array(0,dim = c(ns,nt))
+    otherCumAcc  <- array(0,dim = c(ns,nt,4));  # cumulative accuracy according to reward probability
     
     chswtch <- t(mydata[,5,])
     bet1    <- t(mydata[,13,]); bet2    <- t(mydata[,19,])
@@ -136,6 +138,7 @@ prep_data <- function(modelstr){
       wghtValue[s,,]    <- mydata[,59:60,s]
       cfsC2[s,,]        <- mydata[,61:64,s]
       cfoC2[s,,]        <- mydata[,65:68,s]
+      otherCumAcc[s,,]  <- mydata[,129:132,s]
       
       for (t in 1:nt){
         my1 <- mydata[t,3,s]; other1 <- mydata[t,6:9,s]
@@ -156,6 +159,7 @@ prep_data <- function(modelstr){
     dataList$wOthers_one <- wOthers_one
     dataList$wgtWith_one <- wgtWith_one
     dataList$wgtAgst_one <- wgtAgst_one
+    dataList$otherCumAcc <- otherCumAcc
     
     if ( substr(modelstr,1,20) == 'RevLearn_RLbeta_alt2' ) {
       wProb_sC2 <- array(0,dim = c(ns,nt,4)) 
@@ -182,14 +186,16 @@ prep_data <- function(modelstr){
       L <- cal_prob_v2(dataList)
       dataList$wProb_sC2 <- L$wProb_sC2
       dataList$wProb_oC2 <- L$wProb_oC2
-    } else if ( substr(modelstr,1,20) == 'RevLearn_RLbeta_alt4' ) {
+    } else if ( substr(modelstr,1,20) == 'RevLearn_RLbeta_alt4' || substr(modelstr,1,20) == 'RevLearn_RLbeta_alt5' ) {
       otherReward2 <- array(0,dim = c(ns,nt,4))
       otherWith2   <- array(0,dim = c(ns,nt,4))
       for (s in 1:ns) {
         otherReward2[s,,]  <- mydata[,24:27,s]
         otherWith2[s,,]    <- mydata[,89:92,s]  # otherChoice2 == myChoice2, with(1) or against(0)
       }
-      otherReward2[otherReward2 == -1] = 0
+      if (modelstr != "RevLearn_RLbeta_alt4_c_w_v12_1lr" || modelstr != "RevLearn_RLbeta_alt4_c_w_v21_1lr") {
+          otherReward2[otherReward2 == -1] = 0
+      }
       dataList$otherReward2  <- otherReward2
       dataList$otherWith2    <- otherWith2
     } 
@@ -339,7 +345,19 @@ create_pois <- function(model){
               "lr", "beta", "disc", "cfa",
               "c_rep",
               "log_likc1", "log_likc2", "lp__")
-  } else if ( substr(model,1,20) == 'RevLearn_RLbeta_alt4' ) {
+    
+  } else if ( model == 'RevLearn_RLbeta_alt4_c_w_v15_1lr' ) {
+    pois <- c("lr", "beta", "disc",
+              "c_rep",
+              "log_likc1", "log_likc2", "lp__")
+    
+  } else if ( model == 'RevLearn_RLbeta_alt4_c_w_v23_1lr' ) {
+    pois <- c("lr_mu", "beta_mu", "disc_mu", "tau_mu",
+              "lr_sd", "beta_sd", "disc_sd", "tau_sd",
+              "lr", "beta", "disc", "tau",
+              "c_rep",
+              "log_likc1", "log_likc2", "lp__")
+  } else if ( substr(model,1,20) == 'RevLearn_RLbeta_alt4' || substr(model,1,20) == 'RevLearn_RLbeta_alt5' ) {
     pois <- c("lr_mu", "beta_mu", "disc_mu",
               "lr_sd", "beta_sd", "disc_sd",
               "lr", "beta", "disc",

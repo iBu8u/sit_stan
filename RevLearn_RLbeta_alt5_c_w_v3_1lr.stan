@@ -18,7 +18,7 @@ transformed data {
   vector[3] pwr;      // power
   
   initV  <- rep_vector(0.0,2); 
-  B      <- 6;
+  B      <- 5;
   pwr[1] <- 2;
   pwr[2] <- 1;
   pwr[3] <- 0;
@@ -95,8 +95,7 @@ model {
       choice1[s,t] ~ categorical_logit( valfun1 );
 
       valdiff <- myValue[t,choice1[s,t]] - myValue[t,3-choice1[s,t]];
-      valfun2 <- beta[3,s] + beta[4,s]*valdiff + beta[5,s]*wgtWith[s,t] + beta[6,s]*wgtAgst[s,t];
-
+      valfun2 <- beta[3,s] + beta[4,s]*valdiff + beta[5,s] * (wgtWith[s,t] - wgtAgst[s,t]);
       chswtch[s,t] ~ bernoulli_logit(valfun2);
 
       // my prediction error
@@ -156,8 +155,8 @@ generated quantities {
       log_likc1[s] <- log_likc1[s] + categorical_logit_log(choice1[s,t], valfun1_gen);
 
       valdiff_gen  <- myValue2[t,choice1[s,t]] - myValue2[t,3-choice1[s,t]];
-      valfun2_gen  <- beta[3,s] + beta[4,s]*valdiff_gen + beta[5,s]*wgtWith[s,t] + beta[6,s]*wgtAgst[s,t];
-
+     
+      valfun2_gen <-  beta[3,s] + beta[4,s]*valdiff_gen + beta[5,s] * (wgtWith[s,t] - wgtAgst[s,t]);
       log_likc2[s] <- log_likc2[s] + bernoulli_logit_log(chswtch[s,t], valfun2_gen);
       
       c_rep[s,t]   <- bernoulli_rng( inv_logit(valfun2_gen) );
