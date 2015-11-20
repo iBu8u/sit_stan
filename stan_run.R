@@ -193,7 +193,8 @@ prep_data <- function(modelstr){
         otherReward2[s,,]  <- mydata[,24:27,s]
         otherWith2[s,,]    <- mydata[,89:92,s]  # otherChoice2 == myChoice2, with(1) or against(0)
       }
-      if (modelstr != "RevLearn_RLbeta_alt4_c_w_v12_1lr" || modelstr != "RevLearn_RLbeta_alt4_c_w_v21_1lr") {
+      if (modelstr != "RevLearn_RLbeta_alt4_c_w_v12_1lr" && modelstr != "RevLearn_RLbeta_alt4_c_w_v21_1lr" &&
+          modelstr != "RevLearn_RLbeta_alt4_c_w_v25_1lr" && modelstr != "RevLearn_RLbeta_alt4_c_w_v27_1lr") {
           otherReward2[otherReward2 == -1] = 0
       }
       dataList$otherReward2  <- otherReward2
