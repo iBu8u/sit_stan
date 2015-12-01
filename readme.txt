@@ -62,18 +62,30 @@ RevLearn_
  - RevLearn_RLbeta_alt4_c_w_v21_1lr: based on v12 & v20, separate beta for general bias, using [-1 1] for cr, inv_logit for normalizing
  - RevLearn_RLbeta_alt4_c_w_v22_1lr: based on v6, using other's accuracy as the weight for updating otherValue
  - RevLearn_RLbeta_alt4_c_w_v23_1lr: based on v6, adding two temperatures for categorical_logit() and for bernoulli_logit()
- - RevLearn_RLbeta_alt4_c_w_v24_1lr: based on v19, use (inv_logit *2 -1) for normalizing otherValue, not otherCR
 
+ - RevLearn_RLbeta_alt4_c_w_v24_1lr: based on v19, use (inv_logit *2 -1) for normalizing otherValue, not otherCR
  - RevLearn_RLbeta_alt4_c_w_v25_1lr: --> v24, + 1)different valdiff betas, 2)accuracy as weight, 3)valdiff=diff(valfun), 4) diff(w/a) 2 betas, 5) [-1 1] for cr
  - RevLearn_RLbeta_alt4_c_w_v26_1lr: --> v24, + 1)valdiff=diff(valfun), 2) diff(w/a) 2 betas, 
  - RevLearn_RLbeta_alt4_c_w_v27_1lr: --> v24, + 1)valdiff=diff(valfun), 2) diff(w/a) 2 betas, 3) [-1 1] for cr
  - RevLearn_RLbeta_alt4_c_w_v28_1lr: based on v24, + 1)valdiff=diff(valfun), 2)only uses nAgainst
+ - RevLearn_RLbeta_alt4_c_w_v29_1lr: based on v26, without general bias
+ - RevLearn_RLbeta_alt4_c_w_v30_1lr: based on v28, without general bias
 
+ - RevLearn_RLbeta_alt4_c_w_v31_1lr: based on v6, add (1) 'inv_logit *2 -1' for normalizing otherValue, (2) valdiff=diff(valfun)
+ - RevLearn_RLbeta_alt4_c_w_v32_1lr: based on v31, use something like the RLcoh, 1/2 for second choice, not 0/1 switch 
+ - RevLearn_RLbeta_alt4_c_w_v33_1lr: based on v32, without beta[3,s] * valfun2[:]
+ - RevLearn_RLbeta_alt4_c_w_v34_1lr: based on v31, leave out the general bias
+ - RevLearn_RLbeta_alt4_c_w_v35_1lr: based on v31, valdiff = bet1 * ( valfun1(c1) - valfun1(~c1) )
+ - RevLearn_RLbeta_alt4_c_w_v36_1lr: based on v31, otherReward2, use [-1 1] for the current trial, use [0 1] for the past trial
+ - RevLearn_RLbeta_alt4_c_w_v37_1lr: based on v36, 4) diff(w/a) 2 betas
+ - RevLearn_RLbeta_alt4_c_w_v38_1lr: based on v37, valdiff = bet1 * valdiff
 
  
  - RLbeta_alt5: (preference) weighted sum of cumulative otherRewards to represent otherValue, bind beta5 and beta6 together
  - RevLearn_RLbeta_alt5_c_w_v1_1lr: no 'general bias', run: vfun2 <- beta3*vDiff + beta4*(wgtWigh - wgtAgst)
  - RevLearn_RLbeta_alt5_c_w_v3_1lr: with 'general bias', run: vfun2 <- beta3 + beta4*vDiff + beta5*(wgtWigh - wgtAgst)
+
+
  
  
  

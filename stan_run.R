@@ -188,16 +188,20 @@ prep_data <- function(modelstr){
       dataList$wProb_oC2 <- L$wProb_oC2
     } else if ( substr(modelstr,1,20) == 'RevLearn_RLbeta_alt4' || substr(modelstr,1,20) == 'RevLearn_RLbeta_alt5' ) {
       otherReward2 <- array(0,dim = c(ns,nt,4))
+      otherReward2_actural <- array(0,dim = c(ns,nt,4))
       otherWith2   <- array(0,dim = c(ns,nt,4))
       for (s in 1:ns) {
         otherReward2[s,,]  <- mydata[,24:27,s]
         otherWith2[s,,]    <- mydata[,89:92,s]  # otherChoice2 == myChoice2, with(1) or against(0)
       }
+      otherReward2_actural <- otherReward2
+      
       if (modelstr != "RevLearn_RLbeta_alt4_c_w_v12_1lr" && modelstr != "RevLearn_RLbeta_alt4_c_w_v21_1lr" &&
           modelstr != "RevLearn_RLbeta_alt4_c_w_v25_1lr" && modelstr != "RevLearn_RLbeta_alt4_c_w_v27_1lr") {
           otherReward2[otherReward2 == -1] = 0
       }
-      dataList$otherReward2  <- otherReward2
+      dataList$otherReward2  <- otherReward2  # [0 1] OR [-1 1]
+      dataList$otherReward2_actural  <- otherReward2_actural   ## always [-1 1]
       dataList$otherWith2    <- otherWith2
     } 
     

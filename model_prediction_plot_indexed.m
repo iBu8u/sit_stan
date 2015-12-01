@@ -7,7 +7,9 @@ load '_data\data3_129.mat'
 load '_outputs\param_beta4_alt6'
 load '_outputs\loo_RLbeta4_a6.mat'
 load '_outputs\ppc_RLbeta4_a6.mat'
+load '_outputs\ppc_RLbeta4_a6_switchTrial.mat'
 load '_outputs\missingCnt.mat'
+load '_outputs\switchCnt.mat'
 
 
 % obtain the 1/3 and 2/3 quantiles

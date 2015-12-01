@@ -114,7 +114,7 @@ for j = 1:length(subj)
     text(101, w_a_onset, 'with: green')
     text(101, w_a_onset -1, 'against: red')
     
-    % --- plot acc           
+    %% --- plot acc (predictive accuracy)           
     acc = ppc_RLbeta4_a6_pointwise(subj(j),:);
     y_pos = 4;
     plot(1:nt, acc+y_pos, 'b-.', 'linewidth', 2.5)
